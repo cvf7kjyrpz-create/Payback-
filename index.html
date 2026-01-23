@@ -2,130 +2,108 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Coupon Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Black Wallet</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/663/663338.png">
     
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
+        :root { --ios-bg: #000000; --ios-card: #1c1c1e; --ios-accent: #0a84ff; }
         body { 
-            font-family: -apple-system, system-ui, sans-serif; 
+            background-color: var(--ios-bg); 
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
         }
-        .ios-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-        .barcode-container svg {
-            width: 100% !important;
-            height: auto !important;
-        }
+        .card { background: var(--ios-card); border-radius: 1.2rem; transition: all 0.2s ease; }
+        .card:active { transform: scale(0.97); opacity: 0.8; }
+        .input-field { background: #2c2c2e; border: none; color: white; border-radius: 0.8rem; }
+        .input-field:focus { ring: 2px solid var(--ios-accent); }
+        svg { filter: invert(0); } /* Barcodes bleiben schwarz auf weißem Grund für Scanner */
+        .barcode-bg { background: white; border-radius: 0.8rem; padding: 10px; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="safe-area-inset-top">
 
-    <header class="sticky top-0 z-10 bg-white/70 backdrop-blur-md px-6 pt-12 pb-4 border-b border-gray-200">
-        <h1 class="text-3xl font-extrabold text-gray-900">Meine Barcodes</h1>
-        <p class="text-gray-500 text-sm">Edeka, Netto & PAYBACK</p>
-    </header>
+    <div class="max-w-md mx-auto px-6 pt-16 pb-32">
+        <header class="flex justify-between items-end mb-10">
+            <div>
+                <h1 class="text-4xl font-bold tracking-tight">Coupons</h1>
+                <p class="text-gray-500 font-medium">Digital Wallet</p>
+            </div>
+            <div class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center font-bold">
+                +
+            </div>
+        </header>
 
-    <main class="p-4 pb-32">
-        <div class="bg-white rounded-2xl p-5 shadow-sm mb-8">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase mb-3">Neuer Coupon</h2>
-            <div class="space-y-3">
-                <input type="text" id="couponTitle" placeholder="z.B. Edeka 10fach" 
-                       class="w-full bg-gray-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="number" id="couponCode" placeholder="EAN / Nummer eingeben" 
-                       class="w-full bg-gray-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
-                <button onclick="addCoupon()" 
-                        class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
-                    Barcode erstellen
+        <section class="card p-5 mb-10 shadow-2xl">
+            <div class="flex flex-col gap-4">
+                <input type="text" id="title" placeholder="Händler (z.B. Edeka)" class="input-field p-4 outline-none">
+                <input type="text" id="code" placeholder="Code Nummer" class="input-field p-4 outline-none" inputmode="numeric">
+                <button onclick="addCoupon()" class="bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-700">
+                    Hinzufügen
                 </button>
             </div>
-        </div>
+        </section>
 
-        <div id="couponList" class="space-y-6">
+        <div id="list" class="space-y-6">
             </div>
-    </main>
+    </div>
 
     <script>
-        let coupons = JSON.parse(localStorage.getItem('my_coupons')) || [];
-
-        function saveToStorage() {
-            localStorage.setItem('my_coupons', JSON.stringify(coupons));
-        }
+        let storage = JSON.parse(localStorage.getItem('b_wallet')) || [];
 
         function addCoupon() {
-            const titleInput = document.getElementById('couponTitle');
-            const codeInput = document.getElementById('couponCode');
-            
-            if (!titleInput.value || !codeInput.value) {
-                alert("Bitte Titel und Nummer eingeben!");
-                return;
-            }
+            const t = document.getElementById('title').value;
+            const c = document.getElementById('code').value;
+            if(!t || !c) return;
 
-            const newCoupon = {
-                id: Date.now(),
-                title: titleInput.value,
-                code: codeInput.value
-            };
-
-            coupons.unshift(newCoupon);
-            saveToStorage();
+            const entry = { id: Date.now(), title: t, code: c };
+            storage.unshift(entry);
+            localStorage.setItem('b_wallet', JSON.stringify(storage));
+            document.getElementById('title').value = '';
+            document.getElementById('code').value = '';
             render();
-
-            titleInput.value = "";
-            codeInput.value = "";
         }
 
-        function deleteCoupon(id) {
-            coupons = coupons.filter(c => c.id !== id);
-            saveToStorage();
+        function remove(id) {
+            storage = storage.filter(i => i.id !== id);
+            localStorage.setItem('b_wallet', JSON.stringify(storage));
             render();
         }
 
         function render() {
-            const container = document.getElementById('couponList');
-            container.innerHTML = "";
+            const list = document.getElementById('list');
+            list.innerHTML = '';
 
-            if (coupons.length === 0) {
-                container.innerHTML = `<p class="text-center text-gray-400 mt-10">Noch keine Coupons gespeichert.</p>`;
-                return;
-            }
-
-            coupons.forEach(coupon => {
+            storage.forEach(item => {
                 const div = document.createElement('div');
-                div.className = "bg-white rounded-3xl shadow-md overflow-hidden border border-gray-100";
+                div.className = "card p-5";
                 div.innerHTML = `
-                    <div class="p-4 flex justify-between items-center bg-gray-50 border-b border-gray-100">
-                        <span class="font-bold text-gray-800">${coupon.title}</span>
-                        <button onclick="deleteCoupon(${coupon.id})" class="text-red-500 text-sm font-medium">Löschen</button>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xl font-bold tracking-tight">${item.title}</span>
+                        <button onclick="remove(${item.id})" class="text-red-500 text-sm font-bold uppercase tracking-widest">Löschen</button>
                     </div>
-                    <div class="p-6 flex flex-col items-center bg-white barcode-container">
-                        <svg id="barcode-${coupon.id}"></svg>
-                        <span class="font-mono text-gray-500 mt-2 tracking-widest">${coupon.code}</span>
+                    <div class="barcode-bg flex flex-col items-center justify-center overflow-hidden">
+                        <svg id="b-${item.id}"></svg>
+                    </div>
+                    <div class="text-center mt-3 text-gray-400 font-mono text-xs tracking-widest">
+                        ${item.code}
                     </div>
                 `;
-                container.appendChild(div);
+                list.appendChild(div);
 
-                // Barcode Rendering (Code128 ist Standard für PAYBACK/Edeka)
-                JsBarcode(`#barcode-${coupon.id}`, coupon.code, {
+                JsBarcode(`#b-${item.id}`, item.code, {
                     format: "CODE128",
-                    width: 2.5,
-                    height: 80,
-                    displayValue: false,
-                    lineColor: "#000"
+                    width: 2,
+                    height: 60,
+                    displayValue: false
                 });
             });
         }
-
-        // Initiales Laden
         render();
     </script>
 </body>
