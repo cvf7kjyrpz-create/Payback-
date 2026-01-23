@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Coupon Wallet</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/663/663338.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .ios-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .barcode-container svg {
+            width: 100% !important;
+            height: auto !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <header class="sticky top-0 z-10 bg-white/70 backdrop-blur-md px-6 pt-12 pb-4 border-b border-gray-200">
+        <h1 class="text-3xl font-extrabold text-gray-900">Meine Barcodes</h1>
+        <p class="text-gray-500 text-sm">Edeka, Netto & PAYBACK</p>
+    </header>
+
+    <main class="p-4 pb-32">
+        <div class="bg-white rounded-2xl p-5 shadow-sm mb-8">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase mb-3">Neuer Coupon</h2>
+            <div class="space-y-3">
+                <input type="text" id="couponTitle" placeholder="z.B. Edeka 10fach" 
+                       class="w-full bg-gray-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="couponCode" placeholder="EAN / Nummer eingeben" 
+                       class="w-full bg-gray-100 border-none rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="addCoupon()" 
+                        class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
+                    Barcode erstellen
+                </button>
+            </div>
+        </div>
+
+        <div id="couponList" class="space-y-6">
+            </div>
+    </main>
+
+    <script>
+        let coupons = JSON.parse(localStorage.getItem('my_coupons')) || [];
+
+        function saveToStorage() {
+            localStorage.setItem('my_coupons', JSON.stringify(coupons));
+        }
+
+        function addCoupon() {
+            const titleInput = document.getElementById('couponTitle');
+            const codeInput = document.getElementById('couponCode');
+            
+            if (!titleInput.value || !codeInput.value) {
+                alert("Bitte Titel und Nummer eingeben!");
+                return;
+            }
+
+            const newCoupon = {
+                id: Date.now(),
+                title: titleInput.value,
+                code: codeInput.value
+            };
+
+            coupons.unshift(newCoupon);
+            saveToStorage();
+            render();
+
+            titleInput.value = "";
+            codeInput.value = "";
+        }
+
+        function deleteCoupon(id) {
+            coupons = coupons.filter(c => c.id !== id);
+            saveToStorage();
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('couponList');
+            container.innerHTML = "";
+
+            if (coupons.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 mt-10">Noch keine Coupons gespeichert.</p>`;
+                return;
+            }
+
+            coupons.forEach(coupon => {
+                const div = document.createElement('div');
+                div.className = "bg-white rounded-3xl shadow-md overflow-hidden border border-gray-100";
+                div.innerHTML = `
+                    <div class="p-4 flex justify-between items-center bg-gray-50 border-b border-gray-100">
+                        <span class="font-bold text-gray-800">${coupon.title}</span>
+                        <button onclick="deleteCoupon(${coupon.id})" class="text-red-500 text-sm font-medium">Löschen</button>
+                    </div>
+                    <div class="p-6 flex flex-col items-center bg-white barcode-container">
+                        <svg id="barcode-${coupon.id}"></svg>
+                        <span class="font-mono text-gray-500 mt-2 tracking-widest">${coupon.code}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+
+                // Barcode Rendering (Code128 ist Standard für PAYBACK/Edeka)
+                JsBarcode(`#barcode-${coupon.id}`, coupon.code, {
+                    format: "CODE128",
+                    width: 2.5,
+                    height: 80,
+                    displayValue: false,
+                    lineColor: "#000"
+                });
+            });
+        }
+
+        // Initiales Laden
+        render();
+    </script>
+</body>
+</html>
