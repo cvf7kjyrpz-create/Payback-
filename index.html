@@ -38,6 +38,13 @@
         /* Scanner Styles */
         #reader video { object-fit: cover; border-radius: 1rem; }
         #reader { border: none !important; }
+        
+        /* Scan Rahmen Animation */
+        .scan-region-highlight {
+            border: 2px solid #0A84FF !important;
+            box-shadow: 0 0 20px rgba(10, 132, 255, 0.5);
+            border-radius: 10px;
+        }
 
         /* Animationen */
         .chip { transition: all 0.2s ease; border: 1px solid transparent; }
@@ -124,8 +131,9 @@
             <button onclick="stopCameraScan()" class="text-white font-bold bg-white/20 px-4 py-2 rounded-full text-sm">Abbrechen</button>
         </div>
         <div id="reader" class="w-full h-full bg-black"></div>
-        <div class="absolute bottom-10 w-full text-center text-gray-400 text-sm p-4">
-            Halte die Kamera auf den Barcode
+        <div class="absolute bottom-10 w-full text-center text-gray-400 text-sm p-4 bg-gradient-to-t from-black to-transparent">
+            <p class="font-bold text-white mb-1">Tipp: Geh nah ran!</p>
+            <p>Der Strichcode muss im Rahmen liegen.</p>
         </div>
     </div>
 
@@ -140,7 +148,7 @@
 
     <script>
         // --- Setup & State ---
-        let coupons = JSON.parse(localStorage.getItem('bw_coupons_v3')) || [];
+        let coupons = JSON.parse(localStorage.getItem('bw_coupons_v4')) || [];
         let currentRetailer = 'Edeka';
         let html5QrCode; 
 
@@ -205,7 +213,7 @@
             };
 
             coupons.unshift(newCoupon);
-            localStorage.setItem('bw_coupons_v3', JSON.stringify(coupons));
+            localStorage.setItem('bw_coupons_v4', JSON.stringify(coupons));
             
             document.getElementById('code').value = '';
             document.getElementById('custom-retailer').value = '';
@@ -217,7 +225,7 @@
             event.stopPropagation();
             if(confirm('Löschen?')) {
                 coupons = coupons.filter(c => c.id !== id);
-                localStorage.setItem('bw_coupons_v3', JSON.stringify(coupons));
+                localStorage.setItem('bw_coupons_v4', JSON.stringify(coupons));
                 render();
             }
         }
@@ -237,7 +245,6 @@
                         text: shareText
                     });
                 } else {
-                    // Fallback: WhatsApp Link direkt öffnen
                     const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
                     window.open(waUrl, '_blank');
                 }
@@ -246,13 +253,13 @@
             }
         }
 
-        // --- Scanning Logic ---
+        // --- Scanning Logic (OPTIMIERT) ---
 
         function onScanSuccess(decodedText, decodedResult) {
             if (navigator.vibrate) navigator.vibrate(200);
             document.getElementById('code').value = decodedText;
             stopCameraScan();
-            alert(`Code erkannt: ${decodedText}`);
+            // Optional: Automatisches Schließen des Overlays nach Erfolg
         }
 
         function startCameraScan() {
@@ -261,12 +268,34 @@
             overlay.classList.add('flex');
 
             html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspect: 1.0 };
             
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-            .catch(err => {
+            // Konfiguration speziell für Barcodes (breit und hochauflösend)
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 300, height: 150 }, // Rechteckig statt quadratisch!
+                aspectRatio: 1.0,
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true // Nutzt native Hardware-Erkennung wenn möglich
+                }
+            };
+            
+            // WICHTIG: Explizite Formate angeben, sonst wird oft nur QR gesucht
+            const configFull = {
+                formatsToSupport: [ 
+                    Html5QrcodeSupportedFormats.CODE_128, 
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.QR_CODE 
+                ]
+            };
+
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess
+            ).catch(err => {
                 console.error(err);
-                alert("Kamera konnte nicht gestartet werden. Bitte Berechtigung prüfen.");
+                alert("Fehler beim Starten der Kamera: " + err);
                 stopCameraScan();
             });
         }
@@ -275,13 +304,19 @@
             if (html5QrCode) {
                 html5QrCode.stop().then(() => {
                     html5QrCode.clear();
-                    document.getElementById('scanner-overlay').classList.add('hidden');
-                    document.getElementById('scanner-overlay').classList.remove('flex');
-                }).catch(err => console.log(err));
+                    closeOverlay();
+                }).catch(err => {
+                    console.log("Stop failed", err);
+                    closeOverlay();
+                });
             } else {
-                document.getElementById('scanner-overlay').classList.add('hidden');
-                document.getElementById('scanner-overlay').classList.remove('flex');
+                closeOverlay();
             }
+        }
+
+        function closeOverlay() {
+            document.getElementById('scanner-overlay').classList.add('hidden');
+            document.getElementById('scanner-overlay').classList.remove('flex');
         }
 
         function triggerFileScan() {
@@ -291,6 +326,8 @@
         function handleFileScan(input) {
             if (input.files.length === 0) return;
             const imageFile = input.files[0];
+            
+            // Auch hier: Explizite Formate für File-Scan
             const html5QrCode = new Html5Qrcode("reader");
 
             html5QrCode.scanFile(imageFile, true)
@@ -298,7 +335,7 @@
                 onScanSuccess(decodedText, null);
             })
             .catch(err => {
-                alert("Kein Barcode auf dem Bild gefunden. Bitte versuche ein schärferes Bild.");
+                alert("Kein Barcode erkannt. Tipp: Schneide das Bild so zu, dass nur der Barcode zu sehen ist.");
             });
         }
 
