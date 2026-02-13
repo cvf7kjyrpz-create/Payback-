@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Black Wallet OCR</title>
+    <title>Coupon Wallet Pro</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,15 +11,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* Custom Dark Mode Tweaks */
         :root {
             --bg-body: #000000;
             --bg-card: #1C1C1E;
-            --bg-input: #2C2C2E;
-            --accent: #0A84FF;
+            --bg-accent: #2C2C2E;
+            --highlight: #0A84FF;
         }
 
         body {
@@ -33,129 +33,181 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        input[type="date"] { color-scheme: dark; background: transparent; color: white; font-family: inherit; }
+        input, select { 
+            color-scheme: dark; 
+            background: #2C2C2E; 
+            color: white; 
+            border: none;
+            outline: none;
+        }
 
-        /* Animationen */
-        .chip { transition: all 0.2s ease; border: 1px solid transparent; }
-        .chip.active { background-color: white; color: black; font-weight: 600; border-color: white; transform: scale(1.05); }
-        .coupon-card { transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); }
-        .coupon-card:active { transform: scale(0.98); }
-        .expired { opacity: 0.5; filter: grayscale(100%); }
-
-        /* Loading Spinner Animation */
+        /* Loading Animation */
         .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+            border: 4px solid #333;
+            border-top: 4px solid #0A84FF;
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Chips Animation */
+        .chip { transition: all 0.2s ease; border: 1px solid transparent; }
+        .chip.active { background-color: white; color: black; font-weight: 700; border-color: white; transform: scale(1.05); }
+
+        /* Card Styles */
+        .coupon-card { 
+            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; 
+        }
+        .coupon-card:active { transform: scale(0.98); }
+        
+        .retailer-header {
+            position: sticky;
+            top: 80px; /* Offset for main header */
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+            padding: 10px 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
     </style>
 </head>
-<body class="safe-area-inset-top pb-32">
+<body class="safe-area-inset-top pb-40">
 
-    <div class="px-6 pt-16 pb-6 sticky top-0 z-20 bg-black/80 backdrop-blur-xl border-b border-white/10">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight">Meine Coupons</h1>
-                <p id="status-text" class="text-sm text-gray-400 mt-1">Lade Daten...</p>
-            </div>
+    <div class="px-6 pt-16 pb-4 sticky top-0 z-20 bg-black/90 backdrop-blur-xl border-b border-white/10 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Wallet</h1>
+            <p id="status-text" class="text-xs text-gray-400 mt-1">Lade Daten...</p>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="document.getElementById('backup-menu').classList.toggle('hidden')" class="bg-[#2C2C2E] w-10 h-10 rounded-full flex items-center justify-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+            </button>
             <button onclick="toggleForm()" class="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-900/50 active:scale-90 transition-transform">
                 +
             </button>
         </div>
     </div>
 
-    <div id="ocr-loader" class="fixed inset-0 z-[60] bg-black/80 hidden flex-col items-center justify-center backdrop-blur-sm">
-        <div class="loader mb-4"></div>
-        <h3 class="text-xl font-bold">Analysiere Bild...</h3>
-        <p class="text-gray-400 text-sm mt-2">Suche nach Zahlen</p>
+    <div id="backup-menu" class="hidden absolute right-6 top-28 bg-[#2C2C2E] p-4 rounded-xl shadow-2xl z-30 border border-white/10 w-64">
+        <h3 class="text-sm font-bold text-gray-400 mb-3 uppercase">Datensicherung</h3>
+        <button onclick="exportData()" class="w-full text-left p-3 hover:bg-white/10 rounded-lg text-sm mb-2 flex items-center gap-2">
+            📥 Backup erstellen (Speichern)
+        </button>
+        <button onclick="document.getElementById('import-input').click()" class="w-full text-left p-3 hover:bg-white/10 rounded-lg text-sm flex items-center gap-2 text-blue-400">
+            📤 Backup laden (Wiederherstellen)
+        </button>
+        <input type="file" id="import-input" class="hidden" accept=".json" onchange="importData(this)">
     </div>
 
-    <div id="add-form" class="hidden px-6 mb-8 transition-all duration-300">
+    <div id="ocr-loader" class="fixed inset-0 z-[60] bg-black/90 hidden flex-col items-center justify-center backdrop-blur-sm">
+        <div class="loader mb-6"></div>
+        <h3 class="text-2xl font-bold mb-2">Analysiere Bild</h3>
+        <p class="text-gray-400 text-sm text-center px-10">Optimiere Kontrast & suche nach Zahlenreihen...</p>
+        <div id="ocr-progress" class="mt-4 text-blue-500 font-mono text-xs">0%</div>
+    </div>
+
+    <div id="add-form" class="hidden px-6 mb-8 mt-4 transition-all duration-300">
         <div class="bg-[#1C1C1E] p-5 rounded-3xl border border-white/10 shadow-2xl space-y-5">
             
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="document.getElementById('camera-input').click()" class="bg-[#2C2C2E] py-4 rounded-xl flex flex-col items-center justify-center gap-2 active:bg-blue-600 active:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span class="text-xs font-bold uppercase tracking-wider">Kamera</span>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="document.getElementById('camera-input').click()" class="bg-[#2C2C2E] py-4 rounded-xl flex flex-col items-center gap-2 active:bg-blue-600 active:text-white">
+                    <span class="text-2xl">📷</span>
+                    <span class="text-xs font-bold uppercase">Foto machen</span>
                 </button>
-                
-                <button onclick="document.getElementById('gallery-input').click()" class="bg-[#2C2C2E] py-4 rounded-xl flex flex-col items-center justify-center gap-2 active:bg-blue-600 active:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span class="text-xs font-bold uppercase tracking-wider">Foto Upload</span>
+                <button onclick="document.getElementById('gallery-input').click()" class="bg-[#2C2C2E] py-4 rounded-xl flex flex-col items-center gap-2 active:bg-blue-600 active:text-white">
+                    <span class="text-2xl">🖼️</span>
+                    <span class="text-xs font-bold uppercase">Bild hochladen</span>
                 </button>
-
                 <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="processImage(this)">
                 <input type="file" id="gallery-input" accept="image/*" class="hidden" onchange="processImage(this)">
             </div>
 
+            <canvas id="preprocess-canvas" class="hidden"></canvas>
+
             <div class="h-px bg-white/10 w-full"></div>
 
             <div>
-                <label class="text-xs text-gray-500 uppercase tracking-wider font-bold ml-1 mb-2 block">Händler</label>
-                <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                <label class="text-xs text-gray-500 uppercase font-bold ml-1 mb-2 block">Händler</label>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                     <button onclick="selectRetailer('Edeka')" class="chip active bg-[#2C2C2E] px-4 py-2 rounded-full text-sm whitespace-nowrap" id="btn-Edeka">Edeka</button>
                     <button onclick="selectRetailer('Netto')" class="chip bg-[#2C2C2E] px-4 py-2 rounded-full text-sm whitespace-nowrap" id="btn-Netto">Netto</button>
                     <button onclick="selectRetailer('DM')" class="chip bg-[#2C2C2E] px-4 py-2 rounded-full text-sm whitespace-nowrap" id="btn-DM">dm</button>
-                    <button onclick="selectRetailer('Aral')" class="chip bg-[#2C2C2E] px-4 py-2 rounded-full text-sm whitespace-nowrap" id="btn-Aral">Aral</button>
+                    <button onclick="selectRetailer('Rossmann')" class="chip bg-[#2C2C2E] px-4 py-2 rounded-full text-sm whitespace-nowrap" id="btn-Rossmann">Rossmann</button>
+                    <button onclick="selectRetailer('Payback')" class="chip bg-[#2C2C2E] px-4 py-2 rounded-full text-sm whitespace-nowrap" id="btn-Payback">Payback</button>
                     <button onclick="selectRetailer('Sonstiges')" class="chip bg-[#2C2C2E] px-4 py-2 rounded-full text-sm whitespace-nowrap" id="btn-Sonstiges">Eigen</button>
                 </div>
             </div>
 
             <div id="custom-input-container" class="hidden">
-                <input type="text" id="custom-retailer" placeholder="Name des Händlers" class="w-full bg-[#2C2C2E] text-white p-4 rounded-xl outline-none focus:ring-1 focus:ring-blue-500">
+                <input type="text" id="custom-retailer" placeholder="Name des Marktes" class="w-full p-4 rounded-xl">
             </div>
 
-            <input type="number" id="code" placeholder="Nummer eingeben oder Foto machen" class="w-full bg-[#2C2C2E] text-white p-4 rounded-xl outline-none focus:ring-1 focus:ring-blue-500 font-mono text-lg" inputmode="numeric">
+            <div>
+                <label class="text-xs text-gray-500 uppercase font-bold ml-1 mb-2 block">Wertigkeit</label>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="setMultiplier('Standard')" class="multi-btn active bg-[#2C2C2E] py-2 rounded-lg text-xs" id="mult-Standard">Normal</button>
+                    <button onclick="setMultiplier('5fach')" class="multi-btn bg-[#2C2C2E] py-2 rounded-lg text-xs font-bold text-blue-400" id="mult-5fach">5x</button>
+                    <button onclick="setMultiplier('10fach')" class="multi-btn bg-[#2C2C2E] py-2 rounded-lg text-xs font-bold text-yellow-400" id="mult-10fach">10x</button>
+                    <button onclick="setMultiplier('15fach')" class="multi-btn bg-[#2C2C2E] py-2 rounded-lg text-xs font-bold text-orange-500" id="mult-15fach">15x</button>
+                    <button onclick="setMultiplier('20fach')" class="multi-btn bg-[#2C2C2E] py-2 rounded-lg text-xs font-bold text-red-500" id="mult-20fach">20x</button>
+                    <input type="text" id="custom-multi" placeholder="z.B. 300 Extra" class="col-span-3 bg-[#2C2C2E] rounded-lg px-3 text-xs text-center">
+                </div>
+            </div>
+
+            <input type="number" id="code" placeholder="Barcode Nummer (Erkanntes)" class="w-full p-4 rounded-xl font-mono text-lg text-center tracking-widest bg-black border border-white/20">
             
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="text-xs text-gray-500 ml-1 block mb-1">Gültig ab</label>
-                    <input type="date" id="valid-from" class="w-full bg-[#2C2C2E] p-3 rounded-xl outline-none text-sm">
-                </div>
-                <div>
                     <label class="text-xs text-gray-500 ml-1 block mb-1">Gültig bis</label>
-                    <input type="date" id="valid-until" class="w-full bg-[#2C2C2E] p-3 rounded-xl outline-none text-sm">
+                    <input type="date" id="valid-until" class="w-full p-3 rounded-xl text-sm">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="saveCoupon()" class="w-full bg-blue-600 py-3 rounded-xl font-bold shadow-lg active:bg-blue-700">
+                        Speichern
+                    </button>
                 </div>
             </div>
-
-            <div class="flex gap-3 pt-2">
-                <button onclick="toggleForm()" class="flex-1 py-3 rounded-xl text-gray-400 font-medium bg-transparent hover:bg-white/5">Abbrechen</button>
-                <button onclick="saveCoupon()" class="flex-1 bg-blue-600 py-3 rounded-xl font-bold shadow-lg active:bg-blue-700">Speichern</button>
-            </div>
+             <button onclick="toggleForm()" class="w-full py-2 text-gray-500 text-sm">Abbrechen</button>
         </div>
     </div>
 
-    <div id="coupon-list" class="px-6 space-y-5"></div>
+    <div id="coupon-list" class="px-6 space-y-2"></div>
 
-    <div id="focus-overlay" class="fixed inset-0 z-50 bg-white hidden flex-col items-center justify-center p-10" onclick="closeFocus()">
-        <h2 id="focus-title" class="text-black text-3xl font-bold mb-10 text-center">Edeka</h2>
-        <svg id="focus-barcode" class="w-full h-auto"></svg>
-        <p id="focus-code" class="text-black font-mono text-xl mt-6 tracking-[0.2em]"></p>
-        <p class="text-gray-400 text-sm mt-20 animate-pulse">Zum Schließen tippen</p>
+    <div id="focus-overlay" class="fixed inset-0 z-50 bg-white hidden flex-col items-center justify-center p-6" onclick="closeFocus()">
+        <h2 id="focus-retailer" class="text-black text-4xl font-bold mb-2 text-center">Edeka</h2>
+        <div id="focus-badge" class="bg-black text-white px-4 py-1 rounded-full font-bold mb-10 text-xl">10fach</div>
+        
+        <div class="w-full bg-white p-2">
+            <svg id="focus-barcode" class="w-full h-auto max-h-[40vh]"></svg>
+        </div>
+        
+        <p id="focus-code" class="text-black font-mono text-2xl mt-6 tracking-[0.3em] font-bold"></p>
+        <p id="focus-date" class="text-red-600 font-bold mt-4 text-lg"></p>
+        
+        <p class="text-gray-400 text-sm mt-auto pb-10 animate-pulse">Zum Schließen tippen</p>
     </div>
 
-    <script>
-        // --- Setup & State ---
-        let coupons = JSON.parse(localStorage.getItem('bw_coupons_v5')) || [];
-        let currentRetailer = 'Edeka';
+    <div id="share-container" class="fixed top-0 left-[-9999px] width-[400px] bg-white p-6 rounded-none text-black">
+        </div>
 
+    <script>
+        // --- DATA & STATE ---
+        let coupons = JSON.parse(localStorage.getItem('bw_wallet_v6')) || [];
+        let currentRetailer = 'Edeka';
+        let currentMultiplier = 'Standard';
+
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('valid-from').value = today;
             render();
         });
 
-        // --- Core Functions ---
-
+        // --- UI TOGGLES ---
         function toggleForm() {
             const form = document.getElementById('add-form');
             form.classList.toggle('hidden');
@@ -166,15 +218,16 @@
 
         function selectRetailer(name) {
             currentRetailer = name;
+            // Chip UI Update
             document.querySelectorAll('.chip').forEach(btn => {
                 btn.classList.remove('active', 'bg-white', 'text-black');
                 btn.classList.add('bg-[#2C2C2E]', 'text-white');
             });
-            
             const activeBtn = document.getElementById(`btn-${name}`);
             activeBtn.classList.remove('bg-[#2C2C2E]', 'text-white');
             activeBtn.classList.add('active', 'bg-white', 'text-black');
 
+            // Custom Input Toggle
             const customInput = document.getElementById('custom-input-container');
             if (name === 'Sonstiges') {
                 customInput.classList.remove('hidden');
@@ -184,21 +237,34 @@
             }
         }
 
-        function saveCoupon() {
-            // Bereinige Code von Leerzeichen
-            const codeRaw = document.getElementById('code').value;
-            const code = codeRaw.replace(/\s/g, '');
+        function setMultiplier(val) {
+            currentMultiplier = val;
+            document.querySelectorAll('.multi-btn').forEach(b => b.classList.remove('ring-2', 'ring-white'));
+            if(val !== 'Standard') {
+                document.getElementById(`mult-${val}`).classList.add('ring-2', 'ring-white');
+            }
+        }
 
-            const validFrom = document.getElementById('valid-from').value;
+        // --- CRUD ACTIONS ---
+        function saveCoupon() {
+            const codeRaw = document.getElementById('code').value;
+            const code = codeRaw.replace(/\s/g, ''); // Leerzeichen entfernen
             const validUntil = document.getElementById('valid-until').value;
             
+            // Retailer Name ermitteln
             let retailerName = currentRetailer;
             if (currentRetailer === 'Sonstiges') {
                 retailerName = document.getElementById('custom-retailer').value || 'Coupon';
             }
 
-            if (!code) {
-                alert("Bitte Nummer eingeben oder Foto machen.");
+            // Multiplikator ermitteln
+            let multiText = currentMultiplier;
+            const customMulti = document.getElementById('custom-multi').value;
+            if (customMulti) multiText = customMulti;
+            if (multiText === 'Standard') multiText = '';
+
+            if (!code || code.length < 5) {
+                alert("Bitte eine gültige Nummer eingeben.");
                 return;
             }
 
@@ -206,190 +272,377 @@
                 id: Date.now(),
                 retailer: retailerName,
                 code: code,
-                validFrom: validFrom,
+                multi: multiText,
                 validUntil: validUntil,
                 created: new Date().toISOString()
             };
 
-            coupons.unshift(newCoupon);
-            localStorage.setItem('bw_coupons_v5', JSON.stringify(coupons));
+            coupons.push(newCoupon);
+            saveToStorage();
             
+            // Reset Form
             document.getElementById('code').value = '';
-            document.getElementById('custom-retailer').value = '';
+            document.getElementById('custom-multi').value = '';
+            document.getElementById('valid-until').value = '';
             toggleForm();
             render();
         }
 
-        function deleteCoupon(id, event) {
-            event.stopPropagation();
-            if(confirm('Löschen?')) {
+        function deleteCoupon(id) {
+            if(confirm('Wirklich löschen?')) {
                 coupons = coupons.filter(c => c.id !== id);
-                localStorage.setItem('bw_coupons_v5', JSON.stringify(coupons));
+                saveToStorage();
                 render();
             }
         }
 
-        async function shareCoupon(id, event) {
-            event.stopPropagation();
-            const coupon = coupons.find(c => c.id === id);
-            if(!coupon) return;
-
-            const validText = coupon.validUntil ? `Gültig bis: ${new Date(coupon.validUntil).toLocaleDateString('de-DE')}` : 'Dauerhaft gültig';
-            const shareText = `🎟️ *${coupon.retailer} Coupon*\nCode: ${coupon.code}\n${validText}`;
-
-            try {
-                if (navigator.share) {
-                    await navigator.share({
-                        title: `${coupon.retailer} Coupon`,
-                        text: shareText
-                    });
-                } else {
-                    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-                    window.open(waUrl, '_blank');
-                }
-            } catch (err) {
-                console.log('Teilen abgebrochen');
-            }
+        function saveToStorage() {
+            localStorage.setItem('bw_wallet_v6', JSON.stringify(coupons));
         }
 
-        // --- NEW: OCR / Image Processing Logic ---
+        // --- BACKUP SYSTEM ---
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(coupons));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "coupon_backup_" + new Date().toISOString().slice(0,10) + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            document.getElementById('backup-menu').classList.add('hidden');
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loaded = JSON.parse(e.target.result);
+                    if(Array.isArray(loaded)) {
+                        coupons = loaded;
+                        saveToStorage();
+                        render();
+                        alert("Backup erfolgreich geladen!");
+                    } else {
+                        alert("Ungültiges Format.");
+                    }
+                } catch(err) {
+                    alert("Fehler beim Lesen der Datei.");
+                }
+            };
+            reader.readAsText(file);
+            document.getElementById('backup-menu').classList.add('hidden');
+        }
+
+        // --- INTELLIGENT OCR IMAGE PROCESSING ---
+        // Dies ist der "Magie-Teil" für bessere Erkennung
+        function preprocessImage(imageFile, callback) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.getElementById('preprocess-canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Canvasgröße anpassen
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Bild zeichnen
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Bilddaten holen
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    // Filter: Graustufen & hoher Kontrast (Thresholding)
+                    // Damit werden Zahlen schwarz und Hintergrund weiß -> besser für OCR
+                    for (let i = 0; i < data.length; i += 4) {
+                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        // Hard Contrast Threshold
+                        const color = avg < 120 ? 0 : 255; 
+                        data[i] = color;     // R
+                        data[i + 1] = color; // G
+                        data[i + 2] = color; // B
+                    }
+                    
+                    ctx.putImageData(imgData, 0, 0);
+                    
+                    // Canvas als Blob zurückgeben für Tesseract
+                    canvas.toBlob((blob) => {
+                        callback(blob);
+                    });
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(imageFile);
+        }
 
         function processImage(input) {
             if (input.files.length === 0) return;
             const file = input.files[0];
             
-            // Zeige Ladebildschirm
             const loader = document.getElementById('ocr-loader');
+            const progress = document.getElementById('ocr-progress');
             loader.classList.remove('hidden');
             loader.classList.add('flex');
+            progress.innerText = "Optimiere Bild...";
 
-            Tesseract.recognize(
-                file,
-                'eng', // Englisch ist besser für Zahlen als Deutsch
-                { logger: m => console.log(m) }
-            ).then(({ data: { text } }) => {
-                
-                console.log("Erkannter Text:", text);
-                
-                // Wir suchen nach einer Folge von Zahlen.
-                // Payback/EAN sind meist 13 Stellen, Coupons manchmal kürzer (ab 7 Stellen).
-                // Regex: Suche nach 7 bis 16 zusammenhängenden Ziffern.
-                const matches = text.match(/\d{7,16}/g);
+            // Schritt 1: Bild optimieren
+            preprocessImage(file, (optimizedBlob) => {
+                progress.innerText = "Starte KI-Erkennung...";
 
-                loader.classList.add('hidden');
-                loader.classList.remove('flex');
-
-                if (matches && matches.length > 0) {
-                    // Wir nehmen die längste gefundene Zahl, das ist meist der Barcode
-                    const bestMatch = matches.reduce((a, b) => a.length > b.length ? a : b);
+                // Schritt 2: Tesseract Erkennung
+                Tesseract.recognize(
+                    optimizedBlob,
+                    'eng', 
+                    { 
+                        logger: m => {
+                            if(m.status === 'recognizing text') {
+                                progress.innerText = `Erkenne Text: ${Math.round(m.progress * 100)}%`;
+                            }
+                        }
+                    }
+                ).then(({ data: { text } }) => {
+                    console.log("Rohdaten:", text);
                     
-                    document.getElementById('code').value = bestMatch;
-                    alert(`Zahl erkannt: ${bestMatch}`);
-                } else {
-                    alert("Konnte keine klare Nummer erkennen. Bitte manuell eingeben.");
-                }
+                    // Verbesserte Regex: Suche nach Barcode-ähnlichen Mustern
+                    // Payback oft 10-16 Stellen, EAN 13
+                    // Wir filtern alles raus, was keine Zahl ist
+                    const cleanText = text.replace(/[^0-9]/g, ' '); 
+                    const numbers = cleanText.split(' ').filter(n => n.length >= 7 && n.length <= 18);
 
-                // Input resetten, damit man das gleiche Bild nochmal laden kann
-                input.value = "";
-            }).catch(err => {
-                loader.classList.add('hidden');
-                loader.classList.remove('flex');
-                console.error(err);
-                alert("Fehler bei der Bildanalyse.");
+                    loader.classList.add('hidden');
+                    loader.classList.remove('flex');
+
+                    if (numbers.length > 0) {
+                        // Nimm die längste gefundene Zahl (meist der Barcode)
+                        const bestMatch = numbers.sort((a, b) => b.length - a.length)[0];
+                        document.getElementById('code').value = bestMatch;
+                        
+                        // Versuch Datum zu finden (Format TT.MM.JJJJ)
+                        const dateMatch = text.match(/(\d{2})\.(\d{2})\.(\d{2,4})/);
+                        if(dateMatch) {
+                           // Konvertiere zu Input Datum Format YYYY-MM-DD
+                           // Einfache Logik, könnte verfeinert werden
+                           let year = dateMatch[3];
+                           if(year.length === 2) year = "20" + year;
+                           const isoDate = `${year}-${dateMatch[2]}-${dateMatch[1]}`;
+                           document.getElementById('valid-until').value = isoDate;
+                        }
+
+                        alert(`Code erkannt: ${bestMatch}\nDatum geprüft.`);
+                    } else {
+                        alert("Konnte keine klaren Zahlen finden. War das Bild scharf genug?");
+                    }
+                    input.value = ""; // Reset
+                }).catch(err => {
+                    loader.classList.add('hidden');
+                    loader.classList.remove('flex');
+                    alert("Fehler bei der Analyse.");
+                    console.error(err);
+                });
             });
         }
 
-
-        // --- Display Logic ---
-
-        function openFocus(id) {
+        // --- IMAGE SHARING LOGIC ---
+        async function shareAsImage(id) {
             const coupon = coupons.find(c => c.id === id);
             if(!coupon) return;
+
+            // 1. Temporäres schönes HTML bauen für das Bild
+            const container = document.getElementById('share-container');
+            
+            // Styling für den Screenshot (Hell, sauber)
+            container.innerHTML = `
+                <div style="background: white; padding: 20px; text-align: center; border: 4px solid ${getColor(coupon.retailer)}; border-radius: 20px;">
+                    <h1 style="font-size: 30px; font-weight: bold; margin: 0; color: black;">${coupon.retailer}</h1>
+                    ${coupon.multi ? `<div style="background:red; color:white; display:inline-block; padding: 5px 15px; border-radius: 20px; font-weight:bold; margin: 10px 0;">${coupon.multi}</div>` : ''}
+                    <div style="margin: 20px 0;">
+                        <svg id="share-barcode-${id}"></svg>
+                    </div>
+                    <div style="font-family: monospace; font-size: 24px; letter-spacing: 4px; font-weight: bold; color: black;">${coupon.code}</div>
+                    <div style="margin-top: 20px; color: #555;">Gültig bis: ${formatDate(coupon.validUntil)}</div>
+                    <div style="margin-top: 10px; font-size: 10px; color: #ccc;">Generiert mit Coupon Wallet Pro</div>
+                </div>
+            `;
+
+            // Barcode rendern im versteckten Container
+            JsBarcode(`#share-barcode-${id}`, coupon.code, { format: "CODE128", width: 3, height: 100, displayValue: false });
+
+            // 2. Warten kurz damit SVG rendert
+            setTimeout(async () => {
+                try {
+                    // 3. Canvas erzeugen
+                    const canvas = await html2canvas(container, { scale: 2 });
+                    
+                    // 4. Blob erzeugen
+                    canvas.toBlob(async (blob) => {
+                        const file = new File([blob], `coupon_${coupon.retailer}.jpg`, { type: "image/jpeg" });
+                        
+                        // 5. Teilen API aufrufen
+                        if (navigator.share) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Mein Coupon',
+                                text: `Hier ist ein ${coupon.retailer} Coupon für dich!`
+                            });
+                        } else {
+                            alert("Dein Browser unterstützt das direkte Teilen von Bildern nicht. Mache einen Screenshot.");
+                        }
+                    }, 'image/jpeg', 0.9);
+                    
+                } catch (err) {
+                    console.error(err);
+                    alert("Fehler beim Erstellen des Bildes.");
+                }
+            }, 100);
+        }
+
+        // --- RENDER LOGIC ---
+        function render() {
+            const list = document.getElementById('coupon-list');
+            const statusText = document.getElementById('status-text');
+            list.innerHTML = '';
+            statusText.innerText = `${coupons.length} Coupons gespeichert`;
+
+            if (coupons.length === 0) {
+                list.innerHTML = `<div class="text-center mt-20 opacity-50"><div class="text-6xl mb-4">📂</div><p>Keine Coupons. Drücke + um zu starten.</p></div>`;
+                return;
+            }
+
+            // 1. Sortieren und Gruppieren
+            // Erst nach Retailer, dann nach Datum
+            const sorted = coupons.sort((a, b) => {
+                if (a.retailer < b.retailer) return -1;
+                if (a.retailer > b.retailer) return 1;
+                // Wenn gleicher Retailer, nach Datum (bald ablaufende zuerst)
+                return (a.validUntil || '9999') > (b.validUntil || '9999') ? 1 : -1;
+            });
+
+            let lastRetailer = '';
+
+            sorted.forEach(coupon => {
+                // Header für neue Gruppe
+                if(coupon.retailer !== lastRetailer) {
+                    const header = document.createElement('div');
+                    header.className = 'retailer-header text-xl font-bold text-white px-2 mt-6 flex items-center gap-2';
+                    header.innerHTML = `<span class="w-3 h-8 ${getBrandColorClass(coupon.retailer)} rounded-full block"></span> ${coupon.retailer}`;
+                    list.appendChild(header);
+                    lastRetailer = coupon.retailer;
+                }
+
+                // Karte Rendern
+                const dateInfo = getValidityStatus(coupon.validUntil);
+                const div = document.createElement('div');
+                div.className = `coupon-card bg-[#1C1C1E] rounded-xl p-4 mb-3 border-l-4 ${getBrandBorder(coupon.retailer)} shadow-lg`;
+                
+                // HTML Aufbau der Karte
+                div.innerHTML = `
+                    <div class="flex justify-between items-start" onclick="openFocus(${coupon.id})">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                ${coupon.multi ? `<span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">${coupon.multi}</span>` : ''}
+                                <span class="text-xs font-mono text-gray-500 tracking-widest">${coupon.code}</span>
+                            </div>
+                            <div class="text-xs font-bold uppercase mt-1 ${dateInfo.color}">
+                                ${dateInfo.text}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-2 rounded mt-3" onclick="openFocus(${coupon.id})">
+                        <svg id="barcode-${coupon.id}" class="w-full h-12"></svg>
+                    </div>
+
+                    <div class="flex justify-end gap-4 mt-3 pt-2 border-t border-white/5">
+                        <button onclick="shareAsImage(${coupon.id})" class="text-blue-400 text-xs font-bold flex items-center gap-1 uppercase tracking-wide">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                            Bild Teilen
+                        </button>
+                        <button onclick="deleteCoupon(${coupon.id})" class="text-red-500 text-xs font-bold flex items-center gap-1 uppercase tracking-wide">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-2.195-1.858L4.798 7m9.764-4h-4.528a1 1 0 00-.999 1v2h6.526V4a1 1 0 00-1-1zM10 11v6m4-6v6"></path></svg>
+                            Löschen
+                        </button>
+                    </div>
+                `;
+
+                list.appendChild(div);
+                try {
+                    JsBarcode(`#barcode-${coupon.id}`, coupon.code, { format: "CODE128", width: 2, height: 40, displayValue: false, margin: 0 });
+                } catch (e) {}
+            });
+        }
+
+        // --- HELPERS ---
+        function getValidityStatus(dateStr) {
+            if(!dateStr) return { text: 'Dauerhaft gültig', color: 'text-green-500' };
+            const diff = Math.ceil((new Date(dateStr) - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+            if(diff < 0) return { text: 'Abgelaufen', color: 'text-red-500' };
+            if(diff === 0) return { text: 'Nur noch Heute!', color: 'text-yellow-400' };
+            if(diff <= 3) return { text: `Noch ${diff} Tage`, color: 'text-yellow-400' };
+            return { text: `Bis ${formatDate(dateStr)}`, color: 'text-gray-400' };
+        }
+
+        function formatDate(str) {
+            if(!str) return "";
+            const d = new Date(str);
+            return `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+        }
+
+        function getColor(name) {
+             const n = name.toLowerCase();
+             if(n.includes('edeka')) return '#F7E017'; // Gelb
+             if(n.includes('netto')) return '#E2001A'; // Rot
+             if(n.includes('dm')) return '#6A2D91'; // Lila
+             if(n.includes('rossmann')) return '#C70025'; // Rot
+             return '#0A84FF'; // Blau
+        }
+
+        function getBrandBorder(name) {
+            const n = name.toLowerCase();
+            if(n.includes('edeka')) return 'border-yellow-400';
+            if(n.includes('netto')) return 'border-red-600';
+            if(n.includes('dm')) return 'border-purple-500';
+            if(n.includes('rossmann')) return 'border-red-500';
+            if(n.includes('payback')) return 'border-blue-500';
+            return 'border-gray-500';
+        }
+
+        function getBrandColorClass(name) {
+            const n = name.toLowerCase();
+            if(n.includes('edeka')) return 'bg-yellow-400';
+            if(n.includes('netto')) return 'bg-red-600';
+            if(n.includes('dm')) return 'bg-purple-500';
+            return 'bg-gray-500';
+        }
+
+        // --- FULLSCREEN FOCUS ---
+        function openFocus(id) {
+            const coupon = coupons.find(c => c.id === id);
             const overlay = document.getElementById('focus-overlay');
-            document.getElementById('focus-title').innerText = coupon.retailer;
+            
+            document.getElementById('focus-retailer').innerText = coupon.retailer;
             document.getElementById('focus-code').innerText = coupon.code;
+            document.getElementById('focus-badge').innerText = coupon.multi || 'COUPON';
+            
+            // Datum rot markieren wenn es knapp wird
+            const status = getValidityStatus(coupon.validUntil);
+            const dateElem = document.getElementById('focus-date');
+            dateElem.innerText = status.text;
+            dateElem.className = status.color === 'text-red-500' ? 'text-red-500 font-bold text-2xl animate-pulse' : 'text-gray-500 font-bold text-xl';
+
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
-            JsBarcode("#focus-barcode", coupon.code, { format: "CODE128", lineColor: "#000", width: 3, height: 150, displayValue: false, margin: 0 });
+            
+            JsBarcode("#focus-barcode", coupon.code, { format: "CODE128", lineColor: "#000", width: 3, height: 150, displayValue: false });
         }
 
         function closeFocus() {
             const overlay = document.getElementById('focus-overlay');
             overlay.classList.add('hidden');
             overlay.classList.remove('flex');
-        }
-
-        function getValidityStatus(validUntilStr) {
-            if (!validUntilStr) return { text: 'Dauerhaft', color: 'text-green-500', isExpired: false };
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const validUntil = new Date(validUntilStr);
-            const diffDays = Math.ceil((validUntil - today) / (1000 * 60 * 60 * 24)); 
-            if (diffDays < 0) return { text: 'Abgelaufen', color: 'text-red-500', isExpired: true };
-            if (diffDays === 0) return { text: 'Heute!', color: 'text-yellow-400', isExpired: false };
-            if (diffDays <= 3) return { text: `${diffDays} Tage`, color: 'text-yellow-400', isExpired: false };
-            return { text: `Bis ${validUntil.toLocaleDateString('de-DE')}`, color: 'text-gray-400', isExpired: false };
-        }
-
-        function getBrandColor(retailer) {
-            const name = retailer.toLowerCase();
-            if(name.includes('edeka')) return 'border-l-4 border-yellow-400';
-            if(name.includes('netto')) return 'border-l-4 border-red-500';
-            if(name.includes('dm')) return 'border-l-4 border-purple-400';
-            if(name.includes('aral')) return 'border-l-4 border-blue-500';
-            return 'border-l-4 border-gray-600';
-        }
-
-        function render() {
-            const list = document.getElementById('coupon-list');
-            const statusText = document.getElementById('status-text');
-            list.innerHTML = '';
-            statusText.innerText = coupons.length === 0 ? 'Keine Coupons gespeichert' : `${coupons.length} Coupons`;
-
-            if (coupons.length === 0) {
-                list.innerHTML = `<div class="text-center mt-20 opacity-50"><div class="text-6xl mb-4">📸</div><p>Füge deinen ersten Coupon hinzu</p></div>`;
-                return;
-            }
-
-            coupons.forEach(coupon => {
-                const status = getValidityStatus(coupon.validUntil);
-                const brandClass = getBrandColor(coupon.retailer);
-                const expiredClass = status.isExpired ? 'expired' : '';
-
-                const div = document.createElement('div');
-                div.className = `coupon-card bg-[#1C1C1E] rounded-2xl p-5 shadow-lg relative overflow-hidden ${brandClass} ${expiredClass}`;
-                div.onclick = () => openFocus(coupon.id);
-
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <h3 class="font-bold text-xl text-white tracking-tight">${coupon.retailer}</h3>
-                            <p class="text-xs font-medium mt-1 uppercase tracking-wide ${status.color}">${status.text}</p>
-                        </div>
-                        
-                        <div class="flex gap-2">
-                            <button onclick="shareCoupon(${coupon.id}, event)" class="bg-[#2C2C2E] text-blue-400 w-8 h-8 rounded-full flex items-center justify-center hover:bg-blue-500/20 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                </svg>
-                            </button>
-                            <button onclick="deleteCoupon(${coupon.id}, event)" class="bg-[#2C2C2E] text-gray-400 w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500/20 hover:text-red-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="bg-white p-3 rounded-lg flex flex-col items-center justify-center">
-                        <svg id="barcode-${coupon.id}" class="w-full"></svg>
-                    </div>
-                    <div class="text-center mt-2 text-gray-500 font-mono text-xs tracking-[0.1em]">${coupon.code}</div>
-                `;
-                list.appendChild(div);
-                try {
-                    JsBarcode(`#barcode-${coupon.id}`, coupon.code, { format: "CODE128", width: 2, height: 50, displayValue: false, margin: 0 });
-                } catch (e) { console.error(e); }
-            });
         }
     </script>
 </body>
