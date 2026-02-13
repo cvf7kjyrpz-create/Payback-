@@ -9,13 +9,14 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
-        /* --- APPLE STYLE DESIGN --- */
+        /* --- DESIGN SYSTEM --- */
         :root {
             --bg-color: #f2f2f7;
             --card-bg: #ffffff;
             --text-color: #000000;
-            --accent-color: #007aff; /* Apple Blau für Interaktion */
-            --btn-text: #ffffff;
+            --accent-color: #007aff;
+            --header-height: 44px;
+            --tab-height: 80px; /* Inkl. Safe Area */
             --safe-area-top: env(safe-area-inset-top);
             --safe-area-bottom: env(safe-area-inset-bottom);
         }
@@ -25,64 +26,194 @@
                 --bg-color: #000000;
                 --card-bg: #1c1c1e;
                 --text-color: #ffffff;
-                --accent-color: #0a84ff;
             }
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Helvetica, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            padding-top: calc(50px + var(--safe-area-top));
-            padding-bottom: calc(80px + var(--safe-area-bottom));
-            overscroll-behavior-y: none;
-            -webkit-user-select: none;
-            user-select: none;
+            /* WICHTIG: Kein Scrollen auf dem Body */
+            overflow: hidden; 
+            height: 100vh;
+            width: 100vw;
         }
 
         /* --- HEADER --- */
         header {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 0.5px solid rgba(128,128,128,0.3);
-            z-index: 1000;
+            height: calc(var(--header-height) + var(--safe-area-top));
             padding-top: var(--safe-area-top);
-            height: 44px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 0.5px solid rgba(128,128,128,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 10;
+            box-sizing: border-box;
         }
         @media (prefers-color-scheme: dark) {
-            header { background: rgba(30, 30, 30, 0.8); }
+            header { background: rgba(30, 30, 30, 0.95); }
         }
         h1 { font-size: 17px; font-weight: 600; margin: 0; }
 
-        /* --- TABS UNTEN --- */
+        /* --- HAUPTBEREICH (Container) --- */
+        #main-container {
+            position: absolute;
+            top: calc(var(--header-height) + var(--safe-area-top));
+            bottom: var(--tab-height);
+            width: 100%;
+            overflow: hidden; /* Standardmäßig kein Scrollen */
+        }
+
+        /* --- LISTE (Darf scrollen) --- */
+        #view-list {
+            height: 100%;
+            overflow-y: auto; /* Liste muss scrollbar sein */
+            padding: 15px;
+            box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* --- EINGABE (NICHT scrollbar, kompakt) --- */
+        #view-new {
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            padding: 15px;
+            box-sizing: border-box;
+            gap: 15px;
+        }
+        #view-new.active { display: flex; }
+
+        /* --- SCANNER BUTTONS --- */
+        .scan-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .action-btn {
+            flex: 1;
+            background-color: var(--card-bg);
+            color: var(--accent-color);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* --- KAMERA FENSTER --- */
+        #reader {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            margin-bottom: 10px;
+            border: 2px solid var(--accent-color);
+            flex-shrink: 0; /* Darf nicht kleiner werden */
+        }
+
+        /* --- FORMULAR (Kompakt) --- */
+        .form-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 0 16px;
+            flex-grow: 1; /* Füllt den Restplatz */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly; /* Verteilt Felder gleichmäßig */
+        }
+
+        .input-row {
+            padding: 10px 0;
+            border-bottom: 0.5px solid rgba(128,128,128,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        .input-row:last-child { border-bottom: none; }
+        
+        .label {
+            font-size: 11px;
+            color: #8e8e93;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        
+        input {
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            color: var(--text-color);
+            width: 100%;
+            outline: none;
+            font-family: inherit;
+            padding: 0;
+        }
+
+        /* Händler Chips (Horizontal scrollbar innerhalb der Box) */
+        .chip-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+        .chip {
+            background-color: var(--bg-color);
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .chip.selected {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        /* Speichern Button (Unten fixiert) */
+        .save-btn {
+            background-color: var(--accent-color);
+            color: white;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            margin-top: auto; /* Drückt Button nach unten */
+            flex-shrink: 0;
+        }
+
+        /* --- TAB BAR --- */
         .tab-bar {
-            position: fixed;
+            position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            height: var(--tab-height);
+            background: rgba(255, 255, 255, 0.95);
             border-top: 0.5px solid rgba(128,128,128,0.3);
-            padding-bottom: var(--safe-area-bottom);
-            height: 50px;
             display: flex;
             justify-content: space-around;
-            align-items: center;
-            z-index: 1000;
+            align-items: flex-start;
+            padding-top: 10px;
+            box-sizing: border-box;
+            z-index: 10;
         }
         @media (prefers-color-scheme: dark) {
-            .tab-bar { background: rgba(30, 30, 30, 0.9); }
+            .tab-bar { background: rgba(30, 30, 30, 0.95); }
         }
 
         .tab-btn {
@@ -97,151 +228,29 @@
             width: 50%;
         }
         .tab-btn.active { color: var(--accent-color); }
-        .tab-icon { font-size: 22px; margin-bottom: 2px; }
 
-        /* --- VIEWS --- */
-        .view-section { display: none; padding: 20px; }
-        .view-section.active { display: block; }
-
-        /* --- SCANNER BEREICH --- */
-        #reader {
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            display: none; /* Erst unsichtbar */
-            border: 2px solid var(--accent-color);
-        }
-        
-        .scan-btn {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
-
-        /* --- INPUTS --- */
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 0 16px;
-            margin-bottom: 20px;
-        }
-        .input-row {
-            padding: 12px 0;
-            border-bottom: 0.5px solid rgba(128,128,128,0.2);
-            display: flex;
-            flex-direction: column;
-        }
-        .input-row:last-child { border-bottom: none; }
-        
-        .label {
-            font-size: 12px;
-            color: #8e8e93;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        
-        input, select, textarea {
-            background: transparent;
-            border: none;
-            font-size: 17px;
-            color: var(--text-color);
-            width: 100%;
-            outline: none;
-            font-family: inherit;
-        }
-
-        /* Händler Chips */
-        .chip-scroll {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .chip-scroll::-webkit-scrollbar { display: none; }
-
-        .chip {
-            background-color: var(--bg-color);
-            padding: 8px 16px;
-            border-radius: 18px;
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
-            border: 1px solid rgba(128,128,128,0.2);
-        }
-        .chip.selected {
-            background-color: var(--text-color);
-            color: var(--bg-color);
-            border-color: var(--text-color);
-        }
-
-        /* Speichern Button */
-        .save-btn {
-            background-color: var(--accent-color);
-            color: white;
-            width: 100%;
-            padding: 16px;
-            border-radius: 14px;
-            font-size: 17px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-        }
-
-        /* --- LISTE --- */
+        /* --- COUPON ITEM (Liste) --- */
         .coupon-item {
             background-color: var(--card-bg);
             border-radius: 14px;
             margin-bottom: 15px;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .coupon-header {
-            padding: 12px 15px;
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: rgba(128,128,128,0.05);
         }
-        .store-badge { font-weight: 700; font-size: 16px; }
-        .fach-badge { 
-            background: #ff3b30; color: white; 
-            padding: 2px 8px; border-radius: 6px; 
-            font-size: 12px; font-weight: 700; 
-        }
+        .barcode-area { background: white; padding: 10px; display: flex; justify-content: center; }
+        .barcode-svg { width: 100%; height: 60px; max-width: 280px; }
+        .coupon-footer { padding: 10px 15px; font-size: 12px; color: #8e8e93; display: flex; justify-content: space-between; }
+        .delete-text { color: #ff3b30; }
 
-        .barcode-area {
-            background: white;
-            padding: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .barcode-svg { width: 100%; height: 80px; max-width: 300px; }
-
-        .coupon-footer {
-            padding: 10px 15px;
-            font-size: 12px;
-            color: #8e8e93;
-            display: flex;
-            justify-content: space-between;
-        }
-        .delete-btn { color: #ff3b30; font-weight: 600; }
-        .empty-state { text-align: center; margin-top: 50px; color: #8e8e93; }
+        /* Verstecktes Input für Datei-Upload */
+        #file-input { display: none; }
 
     </style>
 </head>
@@ -251,118 +260,134 @@
         <h1 id="header-title">Meine Coupons</h1>
     </header>
 
-    <div id="view-list" class="view-section active">
-        <div id="coupon-list"></div>
-        <div id="empty-state" class="empty-state">Keine Coupons vorhanden.</div>
-    </div>
-
-    <div id="view-new" class="view-section">
+    <div id="main-container">
         
-        <button class="scan-btn" onclick="startScanner()">
-            <span style="font-size:20px">📷</span> Barcode scannen
-        </button>
-        
-        <div id="reader"></div>
-
-        <div class="card">
-            <div class="input-row">
-                <div class="label">Barcode (EAN)</div>
-                <input type="number" id="eanInput" placeholder="Zahl eingeben oder Scannen" style="font-weight: 700; letter-spacing: 1px;">
-            </div>
-
-            <div class="input-row" style="border:none; padding-bottom: 5px;">
-                <div class="label">Händler wählen</div>
-                <div class="chip-scroll">
-                    <div class="chip" onclick="selectStore(this, 'dm')">dm</div>
-                    <div class="chip" onclick="selectStore(this, 'Edeka')">Edeka</div>
-                    <div class="chip" onclick="selectStore(this, 'Rewe')">Rewe</div>
-                    <div class="chip" onclick="selectStore(this, 'Rossmann')">Rossmann</div>
-                    <div class="chip" onclick="selectStore(this, 'Penny')">Penny</div>
-                    <div class="chip" onclick="selectStore(this, 'Lidl')">Lidl</div>
-                    <div class="chip" onclick="selectStore(this, 'Netto')">Netto</div>
-                </div>
-            </div>
-
-            <div class="input-row">
-                <div class="label">Punkte / Wert</div>
-                <div style="display:flex; align-items:center;">
-                    <input type="number" id="fachInput" placeholder="z.B. 20" style="font-size: 22px; font-weight:700; width: 80px;">
-                    <span style="font-size: 18px; color: #8e8e93; font-weight:600;">Fach °P</span>
-                </div>
-            </div>
-
-            <div class="input-row">
-                <div class="label">Gültig bis</div>
-                <input type="date" id="dateInput">
-            </div>
-
-            <div class="input-row" style="border:none;">
-                <div class="label">Notiz</div>
-                <input type="text" id="noteInput" placeholder="Optional">
-            </div>
+        <div id="view-list">
+            <div id="coupon-list"></div>
+            <div id="empty-state" style="text-align:center; margin-top:50px; color:#8e8e93;">Keine Coupons.</div>
         </div>
 
-        <button class="save-btn" onclick="saveCoupon()">Coupon speichern</button>
-        <div style="height: 50px"></div>
+        <div id="view-new">
+            
+            <div class="scan-actions">
+                <button class="action-btn" onclick="startCamera()">
+                    <span>📷</span> Kamera
+                </button>
+                <button class="action-btn" onclick="document.getElementById('file-input').click()">
+                    <span>🖼️</span> Bild laden
+                </button>
+                <input type="file" id="file-input" accept="image/*" onchange="scanFromFile(this)">
+            </div>
+            
+            <div id="reader"></div>
+
+            <div class="form-card">
+                <div class="input-row">
+                    <div class="label">EAN Code</div>
+                    <input type="number" id="eanInput" placeholder="Scannen oder Tippen" style="font-weight: 700;">
+                </div>
+
+                <div class="input-row" style="padding-bottom:5px;">
+                    <div class="label">Händler</div>
+                    <div class="chip-scroll">
+                        <div class="chip" onclick="selectStore(this, 'dm')">dm</div>
+                        <div class="chip" onclick="selectStore(this, 'Edeka')">Edeka</div>
+                        <div class="chip" onclick="selectStore(this, 'Rewe')">Rewe</div>
+                        <div class="chip" onclick="selectStore(this, 'Rossmann')">Rossmann</div>
+                        <div class="chip" onclick="selectStore(this, 'Penny')">Penny</div>
+                        <div class="chip" onclick="selectStore(this, 'Lidl')">Lidl</div>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="label">Wert / Punkte</div>
+                    <div style="display:flex; align-items:center;">
+                        <input type="number" id="fachInput" placeholder="20" style="font-size: 20px; font-weight:700; width: 60px;">
+                        <span style="font-size: 16px; color: #8e8e93; font-weight:600;">Fach °P</span>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="label">Gültig bis</div>
+                    <input type="date" id="dateInput">
+                </div>
+                
+                <div class="input-row" style="border:none;">
+                    <div class="label">Notiz</div>
+                    <input type="text" id="noteInput" placeholder="Optional">
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="saveCoupon()">Speichern</button>
+        </div>
+
     </div>
 
     <div class="tab-bar">
         <button class="tab-btn active" onclick="switchView('list')" id="btn-list">
-            <div class="tab-icon">🎫</div>
-            <div>Coupons</div>
+            <div style="font-size:22px">🎫</div>
+            <div>Wallet</div>
         </button>
         <button class="tab-btn" onclick="switchView('new')" id="btn-new">
-            <div class="tab-icon">➕</div>
+            <div style="font-size:22px">➕</div>
             <div>Neu</div>
         </button>
     </div>
 
     <script>
-        // --- 1. DATEN & INIT ---
-        let coupons = JSON.parse(localStorage.getItem('myCoupons_v2')) || [];
-        let html5QrcodeScanner = null;
+        let coupons = JSON.parse(localStorage.getItem('wallet_v3')) || [];
+        let html5QrCode = null;
         let selectedStore = "";
 
-        // --- 2. SCANNER LOGIK (Das was gefehlt hat!) ---
-        function startScanner() {
+        // --- 1. KAMERA SCANNER ---
+        function startCamera() {
             const readerDiv = document.getElementById('reader');
-            readerDiv.style.display = "block"; // Kamera Bereich anzeigen
-
-            html5QrcodeScanner = new Html5Qrcode("reader");
+            readerDiv.style.display = "block";
             
-            const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspect: 1.0 };
+            // Scanner Initialisieren
+            html5QrCode = new Html5Qrcode("reader");
             
-            // Kamera starten (Rückkamera bevorzugt)
-            html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
-            .catch(err => {
+            const config = { fps: 10, qrbox: { width: 250, height: 100 } };
+            
+            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+                // Erfolg
+                document.getElementById('eanInput').value = decodedText;
+                stopScanner();
+                // Kleines Feedback
+                alert("Code erkannt: " + decodedText);
+            }).catch(err => {
                 alert("Kamera Fehler: " + err);
-                readerDiv.style.display = "none";
             });
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
-            // Wenn EAN erkannt wurde:
-            console.log(`Code scanned = ${decodedText}`);
-            
-            // 1. Ton abspielen (Feedback)
-            // navigator.vibrate(200); // Optional: Vibration
-            
-            // 2. Wert eintragen
-            document.getElementById('eanInput').value = decodedText;
-            
-            // 3. Scanner stoppen
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
                     document.getElementById('reader').style.display = "none";
-                    html5QrcodeScanner.clear();
+                    html5QrCode.clear();
                 });
             }
-            
-            // 4. Fokus auf Fach-Feld setzen für schnelle Eingabe
-            document.getElementById('fachInput').focus();
         }
 
-        // --- 3. UI LOGIK ---
+        // --- 2. BILD UPLOAD SCANNER ---
+        function scanFromFile(input) {
+            if (input.files.length === 0) return;
+            const file = input.files[0];
+
+            // Wir nutzen die gleiche Bibliothek, aber im "File Mode"
+            const html5QrCode = new Html5Qrcode("reader");
+            
+            html5QrCode.scanFile(file, true)
+            .then(decodedText => {
+                document.getElementById('eanInput').value = decodedText;
+                alert("Aus Bild gescannt: " + decodedText);
+            })
+            .catch(err => {
+                alert("Kein Barcode auf diesem Bild gefunden.");
+            });
+        }
+
+        // --- UI LOGIK ---
         function selectStore(el, name) {
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
@@ -370,71 +395,63 @@
         }
 
         function switchView(view) {
-            // Tabs aktiv setzen
+            // Scanner sicherheitshalber stoppen beim Wechsel
+            stopScanner();
+
+            // Tabs
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('btn-' + view).classList.add('active');
             
-            // Views umschalten
-            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-' + view).classList.add('active');
-
-            // Header Titel
+            // Views
+            document.getElementById('view-list').style.display = (view === 'list') ? 'block' : 'none';
+            document.getElementById('view-new').classList.toggle('active', view === 'new');
+            
+            // Titel
             document.getElementById('header-title').innerText = (view === 'list') ? "Meine Coupons" : "Neuer Coupon";
             
-            // Wenn zur Liste gewechselt wird, neu rendern
             if(view === 'list') renderList();
-            
-            // Scanner stoppen wenn man wegwechselt
-            if(view === 'list' && html5QrcodeScanner) {
-                try { 
-                    html5QrcodeScanner.stop(); 
-                    document.getElementById('reader').style.display = "none";
-                } catch(e){}
-            }
         }
 
-        // --- 4. SPEICHERN ---
+        // --- SPEICHERN ---
         function saveCoupon() {
             const ean = document.getElementById('eanInput').value;
             const fach = document.getElementById('fachInput').value;
             const date = document.getElementById('dateInput').value;
             const note = document.getElementById('noteInput').value;
 
-            if(!ean) { alert("Bitte EAN eingeben oder scannen!"); return; }
+            if(!ean) { alert("Bitte EAN Code eingeben."); return; }
 
-            const newEntry = {
+            coupons.push({
                 id: Date.now(),
-                ean: ean,
-                store: selectedStore || "Coupon",
+                ean, 
+                store: selectedStore || "Coupon", 
                 fach: fach || "1",
-                date: date,
-                note: note
-            };
-
-            coupons.push(newEntry);
-            localStorage.setItem('myCoupons_v2', JSON.stringify(coupons));
+                date, 
+                note
+            });
             
-            // Reset
+            localStorage.setItem('wallet_v3', JSON.stringify(coupons));
+            
+            // Reset und Wechsel
             document.getElementById('eanInput').value = "";
             document.getElementById('fachInput').value = "";
             document.getElementById('dateInput').value = "";
             document.getElementById('noteInput').value = "";
             selectedStore = "";
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-
+            
             switchView('list');
         }
 
-        // --- 5. LÖSCHEN ---
         function deleteCoupon(id) {
             if(confirm("Löschen?")) {
                 coupons = coupons.filter(c => c.id !== id);
-                localStorage.setItem('myCoupons_v2', JSON.stringify(coupons));
+                localStorage.setItem('wallet_v3', JSON.stringify(coupons));
                 renderList();
             }
         }
 
-        // --- 6. LISTE RENDERN (MIT BARCODE GENERIERUNG) ---
+        // --- RENDERN ---
         function renderList() {
             const list = document.getElementById('coupon-list');
             list.innerHTML = "";
@@ -446,55 +463,41 @@
                 document.getElementById('empty-state').style.display = "none";
             }
 
-            // Sortieren nach Datum
+            // Sortieren (Datum)
             coupons.sort((a,b) => {
-                if(!a.date) return 1; 
+                if(!a.date) return 1;
                 if(!b.date) return -1;
                 return new Date(a.date) - new Date(b.date);
             });
 
             coupons.forEach(c => {
-                // Datumsformatierung
-                let dateDisplay = c.date ? new Date(c.date).toLocaleDateString('de-DE') : "Unbegrenzt";
-                
-                // HTML Bauen
                 const el = document.createElement('div');
                 el.className = "coupon-item";
+                const dateStr = c.date ? new Date(c.date).toLocaleDateString('de-DE') : "Unbegrenzt";
+                
                 el.innerHTML = `
                     <div class="coupon-header">
-                        <span class="store-badge">${c.store}</span>
-                        <span class="fach-badge">${c.fach} Fach</span>
+                        <span style="font-weight:700">${c.store}</span>
+                        <span style="background:#000; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px;">${c.fach} Fach</span>
                     </div>
                     <div class="barcode-area">
-                        <svg id="barcode-${c.id}" class="barcode-svg"></svg>
+                        <svg id="bc-${c.id}" class="barcode-svg"></svg>
                     </div>
                     <div class="coupon-footer">
-                        <div>
-                            <div>Gültig bis: ${dateDisplay}</div>
-                            <div style="font-size:11px; margin-top:2px;">${c.note}</div>
-                        </div>
-                        <div class="delete-btn" onclick="deleteCoupon(${c.id})">Löschen</div>
+                        <div>Bis: ${dateStr} <span style="margin-left:5px; color:#000;">${c.note}</span></div>
+                        <div class="delete-text" onclick="deleteCoupon(${c.id})">Löschen</div>
                     </div>
                 `;
                 list.appendChild(el);
 
-                // BARCODE GENERIEREN (JsBarcode)
+                // Barcode generieren
                 try {
-                    JsBarcode("#barcode-" + c.id, c.ean, {
-                        format: "EAN13", // Standard Supermarkt
-                        lineColor: "#000",
-                        width: 2,
-                        height: 60,
-                        displayValue: true
+                    JsBarcode("#bc-" + c.id, c.ean, {
+                        format: "EAN13", lineColor: "#000", width: 2, height: 50, displayValue: true
                     });
                 } catch(e) {
-                    // Fallback wenn EAN falsch
-                    JsBarcode("#barcode-" + c.id, c.ean, {
-                        format: "CODE128",
-                        lineColor: "#000",
-                        width: 2,
-                        height: 60,
-                        displayValue: true
+                    JsBarcode("#bc-" + c.id, c.ean, {
+                        format: "CODE128", lineColor: "#000", width: 2, height: 50, displayValue: true
                     });
                 }
             });
@@ -502,7 +505,6 @@
 
         // Start
         renderList();
-
     </script>
 </body>
 </html>
