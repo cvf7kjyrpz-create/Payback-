@@ -1,279 +1,317 @@
-import SwiftUI
-import PhotosUI
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neuer Eintrag</title>
+    <style>
+        /* --- Grundlegendes Design (Apple Style) --- */
+        :root {
+            --bg-color: #ffffff;
+            --input-bg: #f2f2f7;
+            --text-color: #000000;
+            --accent-color: #000000; /* Schwarz statt Blau */
+            --gray-text: #8e8e93;
+            --border-radius: 12px;
+        }
 
-// MARK: - Modernes Input Feld Styling
-struct ModernTextField: View {
-    var title: String
-    @Binding var text: String
-    var icon: String
-
-    var body: some View {
-        HStack(spacing: 15) {
-            Image(systemName: icon)
-                .foregroundColor(.gray)
-                .font(.system(size: 18))
-                .frame(width: 24)
-            
-            ZStack(alignment: .leading) {
-                if text.isEmpty {
-                    Text(title)
-                        .foregroundColor(.gray.opacity(0.6))
-                }
-                TextField("", text: $text)
-                    .foregroundColor(.primary)
+        /* Dunkelmodus Unterstützung */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                --input-bg: #1c1c1e;
+                --text-color: #ffffff;
+                --accent-color: #ffffff;
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground)) // Sehr dezentes Grau
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
-    }
-}
 
-// MARK: - Dezente Speicheranzeige
-struct CompactStorageView: View {
-    var usedPercentage: Double
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "internaldrive")
-                .font(.caption)
-                .foregroundColor(.secondary)
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            /* Verhindert Gummiband-Effekt beim Scrollen */
+            overscroll-behavior-y: none; 
+        }
+
+        /* --- Fester Header (Bleibt oben) --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--bg-color);
+            z-index: 1000;
+            padding-top: env(safe-area-inset-top); /* WICHTIG für iPhone Notch */
+            border-bottom: 0.5px solid rgba(128, 128, 128, 0.2);
+        }
+
+        .header-content {
+            padding: 15px 20px 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Schließen Icon */
+        .close-btn {
+            font-size: 24px;
+            color: var(--gray-text);
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        /* --- Dezente Speicheranzeige --- */
+        .storage-bar-container {
+            padding: 0 20px 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .storage-icon {
+            font-size: 12px;
+            color: var(--gray-text);
+        }
+
+        .progress-track {
+            flex-grow: 1;
+            height: 4px;
+            background-color: var(--input-bg);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 45%; /* Beispielwert */
+            height: 100%;
+            background-color: #34c759; /* Modernes Grün */
+        }
+
+        .storage-text {
+            font-size: 11px;
+            color: var(--gray-text);
+            font-weight: 600;
+        }
+
+        /* --- Hauptinhalt (Scrollbar) --- */
+        main {
+            /* Abstand oben, damit Inhalt nicht hinter dem Header verschwindet */
+            padding-top: 110px; 
+            padding-bottom: 40px;
+            padding-left: 20px;
+            padding-right: 20px;
             
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .frame(width: geometry.size.width, height: 6)
-                        .foregroundColor(Color.gray.opacity(0.2))
-                    
-                    Capsule()
-                        .frame(width: geometry.size.width * CGFloat(usedPercentage), height: 6)
-                        .foregroundColor(usedPercentage > 0.8 ? .orange : .green)
-                }
-            }
-            .frame(height: 6)
-            
-            Text("\(Int(usedPercentage * 100))%")
-                .font(.caption2)
-                .bold()
-                .foregroundColor(.secondary)
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Abstand zwischen allen Elementen */
         }
-        .padding(.horizontal)
-        .padding(.bottom, 10)
-    }
-}
 
-// MARK: - Main View
-struct ModernInputView: View {
-    // State Variablen
-    @State private var title: String = ""
-    @State private var description: String = ""
-    @State private var location: String = ""
-    @State private var selectedImage: UIImage? = nil
-    @State private var showImagePicker = false
-    @State private var sourceType: UIImagePickerController.SourceType = .camera
-    
-    // Action Sheet für Foto-Auswahl
-    @State private var showActionSheet = false
-
-    var body: some View {
-        ZStack {
-            // Hintergrund
-            Color(.systemBackground)
-                .edgesIgnoringSafeArea(.all)
-            
-            VStack(spacing: 0) {
-                
-                // MARK: - 1. Feste Kopfzeile (Rutscht nicht weg)
-                VStack(spacing: 12) {
-                    HStack {
-                        Text("Neuer Eintrag")
-                            .font(.system(size: 28, weight: .bold, design: .default))
-                        Spacer()
-                        Button(action: {
-                            // Schließen Aktion
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.gray.opacity(0.5))
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 10) // Abstand zur Safe Area
-                    
-                    // Die dezente Speicheranzeige
-                    CompactStorageView(usedPercentage: 0.45)
-                    
-                    Divider() // Feine Linie zur Abtrennung
-                }
-                .background(Color(.systemBackground))
-                // WICHTIG: Z-Index sorgt dafür, dass die Header über dem Scroll-Inhalt bleibt
-                .zIndex(1) 
-                
-                // MARK: - 2. Scrollbarer Inhalt (Felder & Foto)
-                ScrollView {
-                    VStack(spacing: 24) { // Viel Luft zwischen den Elementen
-                        
-                        // Foto Bereich
-                        Button(action: {
-                            showActionSheet = true
-                        }) {
-                            ZStack {
-                                if let image = selectedImage {
-                                    Image(uiImage: image)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(height: 200)
-                                        .cornerRadius(16)
-                                        .clipped()
-                                } else {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color(.secondarySystemBackground))
-                                        .frame(height: 180)
-                                        .overlay(
-                                            VStack(spacing: 12) {
-                                                Image(systemName: "camera.fill")
-                                                    .font(.system(size: 30))
-                                                    .foregroundColor(.blue)
-                                                Text("Foto hinzufügen")
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.blue)
-                                            }
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 16)
-                                                .stroke(Style.dash, lineWidth: 1)
-                                        )
-                                }
-                            }
-                        }
-                        .padding(.top, 20)
-                        
-                        // Eingabefelder
-                        VStack(spacing: 16) {
-                            ModernTextField(title: "Titel eingeben", text: $title, icon: "text.alignleft")
-                            
-                            ModernTextField(title: "Standort", text: $location, icon: "mappin.and.ellipse")
-                            
-                            // Beschreibung (Mehrzeilig)
-                            HStack(alignment: .top, spacing: 15) {
-                                Image(systemName: "doc.text")
-                                    .foregroundColor(.gray)
-                                    .font(.system(size: 18))
-                                    .frame(width: 24)
-                                    .padding(.top, 12)
-                                
-                                ZStack(alignment: .topLeading) {
-                                    if description.isEmpty {
-                                        Text("Beschreibung...")
-                                            .foregroundColor(.gray.opacity(0.6))
-                                            .padding(.top, 8)
-                                            .padding(.leading, 4)
-                                    }
-                                    TextEditor(text: $description)
-                                        .frame(height: 100)
-                                        .scrollContentBackground(.hidden) // Entfernt Default Hintergrund
-                                }
-                            }
-                            .padding()
-                            .background(Color(.secondarySystemBackground))
-                            .cornerRadius(12)
-                        }
-                        
-                        // Speichern Button
-                        Button(action: {
-                            // Speichern Logik
-                        }) {
-                            Text("Speichern")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(Color.black) // Modernes Schwarz statt Blau
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 5)
-                        }
-                        .padding(.top, 10)
-                        
-                        Spacer(minLength: 50) // Platz für Keyboard Scroll
-                    }
-                    .padding(.horizontal, 20)
-                }
-            }
+        /* --- Foto Upload Bereich --- */
+        .image-upload-wrapper {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background-color: var(--input-bg);
+            border-radius: var(--border-radius);
+            border: 1px dashed var(--gray-text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        // Action Sheet für Auswahl (Kamera oder Galerie)
-        .actionSheet(isPresented: $showActionSheet) {
-            ActionSheet(title: Text("Foto auswählen"), buttons: [
-                .default(Text("Kamera")) {
-                    self.sourceType = .camera
-                    self.showImagePicker = true
-                },
-                .default(Text("Galerie")) {
-                    self.sourceType = .photoLibrary
-                    self.showImagePicker = true
-                },
-                .cancel()
-            ])
+
+        .image-upload-wrapper:active {
+            opacity: 0.7;
         }
-        // Der Image Picker
-        .sheet(isPresented: $showImagePicker) {
-            ImagePicker(image: $selectedImage, sourceType: sourceType)
+
+        /* Das eigentliche Input Feld (versteckt) */
+        #file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
         }
-    }
-}
 
-// MARK: - Styling Helper
-struct Style {
-    static let dash = StrokeStyle(lineWidth: 1, dash: [5])
-}
+        .placeholder-content {
+            text-align: center;
+            color: var(--accent-color); /* Icon Farbe */
+        }
 
-// MARK: - Image Picker Helper (Standard Implementierung)
-struct ImagePicker: UIViewControllerRepresentable {
-    @Binding var image: UIImage?
-    var sourceType: UIImagePickerController.SourceType
+        .placeholder-content i {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
 
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
+        .placeholder-content span {
+            font-size: 14px;
+            color: var(--gray-text);
+        }
+
+        /* Bild Vorschau */
+        #preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none; /* Standardmäßig ausgeblendet */
+        }
+
+        /* --- Eingabefelder --- */
+        .input-group {
+            background-color: var(--input-bg);
+            border-radius: var(--border-radius);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-icon {
+            font-size: 18px;
+            color: var(--gray-text);
+            width: 24px;
+            text-align: center;
+        }
+
+        .input-group input, 
+        .input-group textarea {
+            border: none;
+            background: none;
+            outline: none;
+            font-size: 16px;
+            color: var(--text-color);
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .input-group textarea {
+            resize: none;
+            min-height: 80px;
+        }
+
+        /* Placeholder Farbe anpassen */
+        ::placeholder {
+            color: rgba(142, 142, 147, 0.6);
+        }
+
+        /* --- Button --- */
+        .save-btn {
+            background-color: var(--accent-color);
+            color: var(--bg-color); /* Inverser Text */
+            border: none;
+            width: 100%;
+            padding: 16px;
+            font-size: 17px;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            margin-top: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .save-btn:active {
+            transform: scale(0.98);
+        }
+
+    </style>
+    </head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <h1>Neuer Eintrag</h1>
+            <button class="close-btn" onclick="alert('Abbrechen')">&times;</button>
+        </div>
         
-        // Prüfen ob Quelle verfügbar ist (z.B. Kamera im Simulator crasht sonst)
-        if UIImagePickerController.isSourceTypeAvailable(sourceType) {
-            picker.sourceType = sourceType
-        } else {
-            picker.sourceType = .photoLibrary
-        }
+        <div class="storage-bar-container">
+            <span class="storage-icon">💾</span> <div class="progress-track">
+                <div class="progress-fill"></div>
+            </div>
+            <span class="storage-text">45%</span>
+        </div>
+    </header>
+
+    <main>
         
-        return picker
-    }
+        <div class="image-upload-wrapper">
+            <input type="file" id="file-input" accept="image/*">
+            
+            <div class="placeholder-content" id="placeholder">
+                <div style="font-size: 30px; margin-bottom: 5px;">📷</div>
+                <span>Foto hinzufügen</span>
+            </div>
+            
+            <img id="preview-image" src="" alt="Vorschau">
+        </div>
 
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+        <div class="input-group">
+            <span class="input-icon">📝</span>
+            <input type="text" placeholder="Titel eingeben" id="titel">
+        </div>
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
+        <div class="input-group">
+            <span class="input-icon">📍</span>
+            <input type="text" placeholder="Standort" id="standort">
+        </div>
 
-    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let parent: ImagePicker
+        <div class="input-group" style="align-items: flex-start;">
+            <span class="input-icon" style="margin-top: 2px;">📄</span>
+            <textarea placeholder="Beschreibung..." id="beschreibung"></textarea>
+        </div>
 
-        init(_ parent: ImagePicker) {
-            self.parent = parent
-        }
+        <button class="save-btn" onclick="saveData()">Speichern</button>
 
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let uiImage = info[.originalImage] as? UIImage {
-                parent.image = uiImage
+    </main>
+
+    <script>
+        // --- Logik für Foto Vorschau ---
+        const fileInput = document.getElementById('file-input');
+        const previewImage = document.getElementById('preview-image');
+        const placeholder = document.getElementById('placeholder');
+
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    // Rahmen entfernen wenn Bild da ist
+                    document.querySelector('.image-upload-wrapper').style.border = 'none';
+                }
+                reader.readAsDataURL(file);
             }
-            picker.dismiss(animated: true)
-        }
-    }
-}
+        });
 
-// Preview
-struct ModernInputView_Previews: PreviewProvider {
-    static var previews: some View {
-        ModernInputView()
-    }
-}
+        // --- Logik für Speichern (Demo) ---
+        function saveData() {
+            const titel = document.getElementById('titel').value;
+            // Hier würde der Upload-Code stehen.
+            // Fürs erste nur eine Meldung:
+            if(titel === "") {
+                alert("Bitte einen Titel eingeben.");
+            } else {
+                alert("Eintrag '" + titel + "' wurde gespeichert!");
+                // Formular zurücksetzen (Optional)
+                // location.reload(); 
+            }
+        }
+    </script>
+
+</body>
+</html>
