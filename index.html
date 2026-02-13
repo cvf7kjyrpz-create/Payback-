@@ -1,450 +1,279 @@
-<!DOCTYPE html>
-<html lang="de" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Wallet Safe</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/265/265733.png">
+import SwiftUI
+import PhotosUI
 
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.min.js"></script>
-    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+// MARK: - Modernes Input Feld Styling
+struct ModernTextField: View {
+    var title: String
+    @Binding var text: String
+    var icon: String
 
-    <style>
-        /* LOCK VIEWPORT & SAFE AREAS */
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden; 
-            position: fixed;
-            background-color: #000;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            /* Wichtig: Nutzt den sicheren Bereich des iPhones */
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        /* Input Reset */
-        input, select {
-            color-scheme: dark;
-            background: #111;
-            color: white;
-            border: 1px solid #222;
-            outline: none;
-            border-radius: 12px;
-            font-size: 16px; 
-        }
-        input:focus { border-color: #3b82f6; background: #161616; }
-
-        /* Chips */
-        .chip {
-            border: 1px solid #222;
-            background: #111;
-            color: #888;
-            transition: all 0.1s;
-        }
-        .chip:active { transform: scale(0.95); }
-        .chip.active {
-            background: #eee;
-            color: black;
-            border-color: white;
-            font-weight: 700;
-        }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .folder-card:active { opacity: 0.7; transform: scale(0.98); }
-    </style>
-</head>
-<body class="flex flex-col">
-
-    <header class="pt-8 pb-4 px-6 flex justify-between items-end bg-black border-b border-white/10 shrink-0 z-30">
-        <div class="flex items-center gap-4">
-            <button id="back-btn" onclick="closeFolder()" class="hidden w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center active:bg-[#333]">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>
-            <h1 id="page-title" class="text-2xl font-bold text-white tracking-tight mb-1">Wallet</h1>
-        </div>
-        
-        <div class="flex gap-4 items-center">
-            <button onclick="document.getElementById('backup-menu').classList.toggle('hidden')" class="w-10 h-10 rounded-full bg-[#111] border border-[#222] flex items-center justify-center text-gray-400 active:bg-[#222]">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            </button>
-            <button onclick="toggleForm()" class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-2xl font-medium text-white shadow-lg shadow-blue-900/40 active:scale-95 transition-transform pb-1">+</button>
-        </div>
-    </header>
-
-    <div id="backup-menu" class="hidden absolute right-6 top-24 bg-[#151515] p-2 rounded-xl border border-[#333] w-48 z-50 shadow-2xl">
-        <button onclick="exportData()" class="w-full text-left p-3 hover:bg-white/5 rounded text-xs text-gray-300">📥 Backup speichern</button>
-        <button onclick="document.getElementById('import-input').click()" class="w-full text-left p-3 hover:bg-white/5 rounded text-xs text-blue-400">📤 Backup laden</button>
-        <input type="file" id="import-input" class="hidden" accept=".json" onchange="importData(this)">
-    </div>
-
-    <main id="main-content" class="flex-1 overflow-y-auto p-4 pb-20 relative">
-        <div id="dashboard-view" class="grid grid-cols-2 gap-3"></div>
-        <div id="list-view" class="hidden space-y-3"></div>
-    </main>
-
-    <div id="add-form" class="hidden fixed inset-0 z-50 bg-black flex flex-col pt-safe">
-        
-        <div class="pt-10 pb-4 px-6 flex justify-between items-center border-b border-[#222] shrink-0 bg-black">
-            <h2 class="text-xl font-bold text-white">Neuer Coupon</h2>
-            <button onclick="toggleForm()" class="text-sm font-medium text-gray-400 px-2 py-2 bg-[#111] rounded-lg">Abbrechen</button>
-        </div>
-
-        <div class="flex-1 p-5 flex flex-col gap-5 overflow-y-auto">
+    var body: some View {
+        HStack(spacing: 15) {
+            Image(systemName: icon)
+                .foregroundColor(.gray)
+                .font(.system(size: 18))
+                .frame(width: 24)
             
-            <div class="shrink-0">
-                <label class="text-[10px] uppercase font-bold text-gray-500 mb-2 block ml-1">Händler</label>
-                <div class="flex gap-3 overflow-x-auto no-scrollbar touch-pan-x py-1">
-                    <button onclick="setRetailerInput('Edeka')" class="chip active h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0">Edeka</button>
-                    <button onclick="setRetailerInput('Netto')" class="chip h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0">Netto</button>
-                    <button onclick="setRetailerInput('DM')" class="chip h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0">dm</button>
-                    <button onclick="setRetailerInput('Rossmann')" class="chip h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0">Rossmann</button>
-                    <button onclick="setRetailerInput('Payback')" class="chip h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0">Payback</button>
-                    <button onclick="setRetailerInput('')" class="chip h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0">Eigen</button>
-                </div>
-                <input type="text" id="retailer-input" placeholder="Name eingeben" class="hidden w-full mt-3 h-12 px-4 text-sm bg-[#222]">
-            </div>
-
-            <div class="grid grid-cols-4 gap-3 shrink-0">
-                <button onclick="document.getElementById('camera-input').click()" class="col-span-1 bg-[#111] border border-[#222] rounded-xl flex items-center justify-center active:bg-[#222] h-14">
-                    <span class="text-2xl">📷</span>
-                </button>
-                <div class="col-span-3">
-                    <input type="number" id="code-input" placeholder="Barcode Nummer" class="w-full h-14 px-4 font-mono text-lg tracking-widest bg-[#080808] border-[#333] focus:border-blue-500">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3 shrink-0">
-                <div class="col-span-1">
-                    <input type="number" id="multi-input" placeholder="10" class="w-full h-12 px-2 text-center font-bold text-yellow-500 bg-[#111] text-lg">
-                </div>
-                <div class="col-span-2">
-                    <input type="text" id="comment-input" placeholder="Notiz (Optional)" class="w-full h-12 px-4 text-sm text-gray-300 bg-[#111]">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 shrink-0">
-                <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1 block ml-1">Start</label>
-                    <input type="date" id="valid-from" class="w-full h-12 px-3 text-xs text-gray-400 bg-[#111] min-w-0">
-                </div>
-                <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1 block ml-1">Ende</label>
-                    <input type="date" id="valid-until" class="w-full h-12 px-3 text-xs font-bold text-white bg-[#111] border border-[#333] min-w-0">
-                </div>
-            </div>
-
-            <div class="flex-grow"></div>
-
-            <button onclick="saveCoupon()" class="w-full h-14 bg-blue-600 rounded-xl font-bold text-sm uppercase tracking-widest shadow-lg shrink-0 active:scale-95 transition-transform mb-6">
-                Speichern
-            </button>
-        </div>
-
-        <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="processImage(this)">
-        <input type="file" id="gallery-input" accept="image/*" class="hidden" onchange="processImage(this)">
-        <canvas id="preprocess-canvas" class="hidden"></canvas>
-    </div>
-
-    <div id="ocr-loader" class="fixed inset-0 z-[60] bg-black/90 hidden flex-col items-center justify-center">
-        <div class="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <span class="text-sm font-bold text-white">Suche Code...</span>
-    </div>
-
-    <div id="focus-overlay" class="fixed inset-0 z-50 bg-[#f5f5f5] hidden flex-col items-center justify-center p-6" onclick="closeFocus()">
-        <h2 id="focus-retailer" class="text-black text-4xl font-black mb-2 text-center uppercase tracking-tighter"></h2>
-        <div id="focus-multi" class="bg-red-600 text-white px-5 py-1 rounded-full font-bold mb-8 text-xl shadow"></div>
-        <p id="focus-comment" class="text-gray-500 text-center mb-6 font-medium text-base italic"></p>
-        
-        <div class="w-full p-4 bg-white shadow-sm rounded-xl mb-6">
-            <svg id="focus-barcode" class="w-full h-auto max-h-[25vh]"></svg>
-        </div>
-        
-        <p id="focus-code" class="text-black font-mono text-3xl tracking-[0.15em] font-bold text-center"></p>
-        
-        <div class="mt-10 text-center">
-            <p class="text-gray-400 text-[9px] uppercase font-bold tracking-widest mb-1">Gültig bis</p>
-            <p id="focus-date" class="text-black font-bold text-2xl"></p>
-        </div>
-        <p class="text-gray-400 text-[10px] mt-auto uppercase tracking-widest animate-pulse pb-10">Tippen zum Schließen</p>
-    </div>
-
-    <div id="share-container" class="fixed top-[-9999px] left-[-9999px] width-[400px] bg-white p-6 text-black"></div>
-
-    <script>
-        // --- DATA ---
-        let coupons = JSON.parse(localStorage.getItem('wallet_safe')) || [];
-        let currentFolder = null;
-        let selectedRetailer = 'Edeka';
-
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            cleanupExpired();
-            renderDashboard();
-            document.getElementById('valid-from').value = new Date().toISOString().split('T')[0];
-        });
-
-        // --- LOGIC ---
-        function cleanupExpired() {
-            const today = new Date(); today.setHours(0,0,0,0);
-            const init = coupons.length;
-            coupons = coupons.filter(c => !c.validUntil || new Date(c.validUntil) >= today);
-            if(coupons.length < init) saveToStorage();
-        }
-
-        function saveCoupon() {
-            let retailer = selectedRetailer;
-            const manual = document.getElementById('retailer-input');
-            if(!manual.classList.contains('hidden')) retailer = manual.value.trim();
-
-            const codeRaw = document.getElementById('code-input').value;
-            const code = codeRaw.replace(/\s/g, ''); 
-            const multi = document.getElementById('multi-input').value;
-            const comment = document.getElementById('comment-input').value;
-            const validFrom = document.getElementById('valid-from').value;
-            const validUntil = document.getElementById('valid-until').value;
-
-            if (!retailer || !code) { alert("Code fehlt!"); return; }
-
-            coupons.push({ id: Date.now(), retailer, code, multi, comment, validFrom, validUntil });
-            saveToStorage();
-            
-            // Reset
-            document.getElementById('code-input').value = '';
-            document.getElementById('multi-input').value = '';
-            document.getElementById('comment-input').value = '';
-            toggleForm();
-            
-            if(currentFolder === retailer) renderList(retailer);
-            else closeFolder();
-        }
-
-        // --- UI ---
-        function setRetailerInput(name) {
-            selectedRetailer = name;
-            const input = document.getElementById('retailer-input');
-            document.querySelectorAll('.chip').forEach(btn => {
-                const isActive = btn.innerText === (name || 'Eigen');
-                btn.className = isActive ? 'chip active h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0' : 'chip h-12 px-6 rounded-xl text-sm font-medium whitespace-nowrap shrink-0';
-            });
-            if(name === '') { input.classList.remove('hidden'); input.value = ''; input.focus(); } 
-            else { input.classList.add('hidden'); input.value = name; }
-        }
-
-        function toggleForm() {
-            const form = document.getElementById('add-form');
-            form.classList.toggle('hidden');
-            if(!form.classList.contains('hidden') && currentFolder) setRetailerInput(currentFolder);
-        }
-
-        function renderDashboard() {
-            const view = document.getElementById('dashboard-view');
-            view.innerHTML = '';
-            const retailers = [...new Set(coupons.map(c => c.retailer))].sort();
-
-            if (retailers.length === 0) {
-                view.innerHTML = `<div class="col-span-2 text-center mt-32 opacity-30"><div class="text-4xl mb-2">📂</div><p class="text-xs">Keine Daten</p></div>`;
-                return;
-            }
-
-            retailers.forEach(r => {
-                const count = coupons.filter(c => c.retailer === r).length;
-                const card = document.createElement('div');
-                card.className = `folder-card bg-[#111] p-4 rounded-2xl border border-[#222] h-28 relative overflow-hidden flex flex-col justify-between`;
-                card.style.borderLeft = `4px solid ${getBrandColor(r)}`;
-                card.onclick = () => openFolder(r);
-                card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <h3 class="font-bold text-white text-lg truncate">${r}</h3>
-                        <span class="bg-[#222] text-gray-400 text-xs font-bold px-2 py-1 rounded-lg">${count}</span>
-                    </div>
-                    <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1">Öffnen &rarr;</div>
-                `;
-                view.appendChild(card);
-            });
-        }
-
-        function openFolder(r) {
-            currentFolder = r;
-            document.getElementById('dashboard-view').classList.add('hidden');
-            document.getElementById('list-view').classList.remove('hidden');
-            document.getElementById('back-btn').classList.remove('hidden');
-            document.getElementById('page-title').innerText = r;
-            renderList(r);
-        }
-
-        function closeFolder() {
-            currentFolder = null;
-            document.getElementById('dashboard-view').classList.remove('hidden');
-            document.getElementById('list-view').classList.add('hidden');
-            document.getElementById('back-btn').classList.add('hidden');
-            document.getElementById('page-title').innerText = "Wallet";
-            renderDashboard();
-        }
-
-        function renderList(filter) {
-            const list = document.getElementById('list-view');
-            list.innerHTML = '';
-            const filtered = coupons.filter(c => c.retailer === filter).sort((a, b) => (a.validUntil || '9999') > (b.validUntil || '9999') ? 1 : -1);
-
-            filtered.forEach(c => {
-                const dateInfo = getValidity(c.validUntil);
-                const div = document.createElement('div');
-                div.className = `bg-[#111] p-4 rounded-xl border border-[#222] relative`;
-                div.innerHTML = `
-                    <div class="flex justify-between items-start" onclick="openFocus(${c.id})">
-                        <div class="flex-1 pr-4">
-                            ${c.multi ? `<span class="inline-block bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded mb-1">${c.multi}x</span>` : ''}
-                            ${c.comment ? `<p class="text-sm font-medium text-gray-200 mb-1 line-clamp-1">"${c.comment}"</p>` : ''}
-                            <p class="text-[10px] uppercase font-bold mt-1 ${dateInfo.color}">${dateInfo.text}</p>
-                        </div>
-                        <div class="text-right">
-                             <span class="font-mono text-gray-500 text-[10px] tracking-widest block mb-2">${c.code}</span>
-                             <div class="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center text-gray-500 ml-auto">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                             </div>
-                        </div>
-                    </div>
-                    <div class="flex justify-end gap-5 mt-3 pt-3 border-t border-[#222]">
-                        <button onclick="shareAsImage(${c.id})" class="text-blue-500 text-[10px] font-bold uppercase tracking-widest">Teilen</button>
-                        <button onclick="deleteCoupon(${c.id})" class="text-red-500 text-[10px] font-bold uppercase tracking-widest">Löschen</button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        // --- SCANNING ---
-        function processImage(input) {
-            if (input.files.length === 0) return;
-            const file = input.files[0];
-            document.getElementById('ocr-loader').classList.remove('hidden');
-            document.getElementById('ocr-loader').classList.add('flex');
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const maxWidth = 800;
-                    const scale = maxWidth / img.width;
-                    const canvas = document.getElementById('preprocess-canvas');
-                    canvas.width = maxWidth; canvas.height = img.height * scale;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const data = imgData.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                        const c = avg < 100 ? 0 : 255;
-                        data[i] = c; data[i + 1] = c; data[i + 2] = c;
-                    }
-                    ctx.putImageData(imgData, 0, 0);
-                    
-                    canvas.toBlob((blob) => {
-                        Tesseract.recognize(blob, 'eng', { tessedit_char_whitelist: '0123456789' })
-                        .then(({ data: { text } }) => {
-                            const nums = text.match(/\d{7,18}/g);
-                            if(nums && nums.length > 0) {
-                                document.getElementById('code-input').value = nums.sort((a,b) => b.length - a.length)[0];
-                                alert("Code erkannt!");
-                            } else {
-                                alert("Kein Code erkannt.");
-                            }
-                            document.getElementById('ocr-loader').classList.add('hidden');
-                            document.getElementById('ocr-loader').classList.remove('flex');
-                        });
-                    });
+            ZStack(alignment: .leading) {
+                if text.isEmpty {
+                    Text(title)
+                        .foregroundColor(.gray.opacity(0.6))
                 }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-        }
-
-        // --- UTILS ---
-        function deleteCoupon(id) {
-            if(confirm('Löschen?')) {
-                coupons = coupons.filter(c => c.id !== id);
-                saveToStorage();
-                renderList(currentFolder);
-                if(!coupons.some(c => c.retailer === currentFolder)) closeFolder();
+                TextField("", text: $text)
+                    .foregroundColor(.primary)
             }
         }
-        function saveToStorage() { localStorage.setItem('wallet_safe', JSON.stringify(coupons)); }
-        
-        function exportData() {
-            const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(coupons));
-            const dl = document.createElement('a'); dl.href = str; dl.download = "backup.json";
-            document.body.appendChild(dl); dl.click(); dl.remove();
+        .padding()
+        .background(Color(.secondarySystemBackground)) // Sehr dezentes Grau
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Dezente Speicheranzeige
+struct CompactStorageView: View {
+    var usedPercentage: Double
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "internaldrive")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .frame(width: geometry.size.width, height: 6)
+                        .foregroundColor(Color.gray.opacity(0.2))
+                    
+                    Capsule()
+                        .frame(width: geometry.size.width * CGFloat(usedPercentage), height: 6)
+                        .foregroundColor(usedPercentage > 0.8 ? .orange : .green)
+                }
+            }
+            .frame(height: 6)
+            
+            Text("\(Int(usedPercentage * 100))%")
+                .font(.caption2)
+                .bold()
+                .foregroundColor(.secondary)
         }
-        function importData(inp) {
-            const r = new FileReader();
-            r.onload = e => { try { coupons = JSON.parse(e.target.result); saveToStorage(); location.reload(); } catch(err) { alert("Fehler"); } };
-            r.readAsText(inp.files[0]);
+        .padding(.horizontal)
+        .padding(.bottom, 10)
+    }
+}
+
+// MARK: - Main View
+struct ModernInputView: View {
+    // State Variablen
+    @State private var title: String = ""
+    @State private var description: String = ""
+    @State private var location: String = ""
+    @State private var selectedImage: UIImage? = nil
+    @State private var showImagePicker = false
+    @State private var sourceType: UIImagePickerController.SourceType = .camera
+    
+    // Action Sheet für Foto-Auswahl
+    @State private var showActionSheet = false
+
+    var body: some View {
+        ZStack {
+            // Hintergrund
+            Color(.systemBackground)
+                .edgesIgnoringSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                
+                // MARK: - 1. Feste Kopfzeile (Rutscht nicht weg)
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Neuer Eintrag")
+                            .font(.system(size: 28, weight: .bold, design: .default))
+                        Spacer()
+                        Button(action: {
+                            // Schließen Aktion
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.gray.opacity(0.5))
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 10) // Abstand zur Safe Area
+                    
+                    // Die dezente Speicheranzeige
+                    CompactStorageView(usedPercentage: 0.45)
+                    
+                    Divider() // Feine Linie zur Abtrennung
+                }
+                .background(Color(.systemBackground))
+                // WICHTIG: Z-Index sorgt dafür, dass die Header über dem Scroll-Inhalt bleibt
+                .zIndex(1) 
+                
+                // MARK: - 2. Scrollbarer Inhalt (Felder & Foto)
+                ScrollView {
+                    VStack(spacing: 24) { // Viel Luft zwischen den Elementen
+                        
+                        // Foto Bereich
+                        Button(action: {
+                            showActionSheet = true
+                        }) {
+                            ZStack {
+                                if let image = selectedImage {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 200)
+                                        .cornerRadius(16)
+                                        .clipped()
+                                } else {
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color(.secondarySystemBackground))
+                                        .frame(height: 180)
+                                        .overlay(
+                                            VStack(spacing: 12) {
+                                                Image(systemName: "camera.fill")
+                                                    .font(.system(size: 30))
+                                                    .foregroundColor(.blue)
+                                                Text("Foto hinzufügen")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.blue)
+                                            }
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(Style.dash, lineWidth: 1)
+                                        )
+                                }
+                            }
+                        }
+                        .padding(.top, 20)
+                        
+                        // Eingabefelder
+                        VStack(spacing: 16) {
+                            ModernTextField(title: "Titel eingeben", text: $title, icon: "text.alignleft")
+                            
+                            ModernTextField(title: "Standort", text: $location, icon: "mappin.and.ellipse")
+                            
+                            // Beschreibung (Mehrzeilig)
+                            HStack(alignment: .top, spacing: 15) {
+                                Image(systemName: "doc.text")
+                                    .foregroundColor(.gray)
+                                    .font(.system(size: 18))
+                                    .frame(width: 24)
+                                    .padding(.top, 12)
+                                
+                                ZStack(alignment: .topLeading) {
+                                    if description.isEmpty {
+                                        Text("Beschreibung...")
+                                            .foregroundColor(.gray.opacity(0.6))
+                                            .padding(.top, 8)
+                                            .padding(.leading, 4)
+                                    }
+                                    TextEditor(text: $description)
+                                        .frame(height: 100)
+                                        .scrollContentBackground(.hidden) // Entfernt Default Hintergrund
+                                }
+                            }
+                            .padding()
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                        }
+                        
+                        // Speichern Button
+                        Button(action: {
+                            // Speichern Logik
+                        }) {
+                            Text("Speichern")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color.black) // Modernes Schwarz statt Blau
+                                .cornerRadius(12)
+                                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 5)
+                        }
+                        .padding(.top, 10)
+                        
+                        Spacer(minLength: 50) // Platz für Keyboard Scroll
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+        }
+        // Action Sheet für Auswahl (Kamera oder Galerie)
+        .actionSheet(isPresented: $showActionSheet) {
+            ActionSheet(title: Text("Foto auswählen"), buttons: [
+                .default(Text("Kamera")) {
+                    self.sourceType = .camera
+                    self.showImagePicker = true
+                },
+                .default(Text("Galerie")) {
+                    self.sourceType = .photoLibrary
+                    self.showImagePicker = true
+                },
+                .cancel()
+            ])
+        }
+        // Der Image Picker
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(image: $selectedImage, sourceType: sourceType)
+        }
+    }
+}
+
+// MARK: - Styling Helper
+struct Style {
+    static let dash = StrokeStyle(lineWidth: 1, dash: [5])
+}
+
+// MARK: - Image Picker Helper (Standard Implementierung)
+struct ImagePicker: UIViewControllerRepresentable {
+    @Binding var image: UIImage?
+    var sourceType: UIImagePickerController.SourceType
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        
+        // Prüfen ob Quelle verfügbar ist (z.B. Kamera im Simulator crasht sonst)
+        if UIImagePickerController.isSourceTypeAvailable(sourceType) {
+            picker.sourceType = sourceType
+        } else {
+            picker.sourceType = .photoLibrary
+        }
+        
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let parent: ImagePicker
+
+        init(_ parent: ImagePicker) {
+            self.parent = parent
         }
 
-        async function shareAsImage(id) {
-            const c = coupons.find(i => i.id === id);
-            const container = document.getElementById('share-container');
-            const color = getBrandColor(c.retailer);
-            
-            container.innerHTML = `
-                <div style="background:white; padding:40px; border-radius:30px; text-align:center; border: 8px solid ${color}">
-                    <h1 style="font-size:50px; margin:0; font-weight:900; color:black; text-transform:uppercase">${c.retailer}</h1>
-                    ${c.multi ? `<div style="background:${color}; color:white; font-size:30px; display:inline-block; padding:10px 30px; border-radius:60px; margin:20px 0; font-weight:bold">${c.multi} FACH</div>` : ''}
-                    ${c.comment ? `<p style="font-size:24px; color:#555; margin:10px 0; font-style:italic">"${c.comment}"</p>` : ''}
-                    <div style="margin:30px 0"><svg id="share-barcode-${id}"></svg></div>
-                    <div style="font-family:monospace; font-size:40px; letter-spacing:8px; font-weight:bold; color:black">${c.code}</div>
-                    <p style="margin-top:30px; color:#333; font-size:18px">Bis: ${formatDate(c.validUntil) || 'unbegrenzt'}</p>
-                </div>`;
-            JsBarcode(`#share-barcode-${id}`, c.code, { format: "CODE128", width: 4, height: 120, displayValue: false });
-            
-            setTimeout(async () => {
-                const canvas = await html2canvas(container, { scale: 1.5 });
-                canvas.toBlob(async (blob) => {
-                    const f = new File([blob], `coupon.jpg`, { type: "image/jpeg" });
-                    if(navigator.share) await navigator.share({ files: [f] });
-                });
-            }, 300);
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let uiImage = info[.originalImage] as? UIImage {
+                parent.image = uiImage
+            }
+            picker.dismiss(animated: true)
         }
+    }
+}
 
-        function openFocus(id) {
-            const c = coupons.find(i => i.id === id);
-            document.getElementById('focus-retailer').innerText = c.retailer;
-            document.getElementById('focus-code').innerText = c.code;
-            const badge = document.getElementById('focus-multi');
-            if(c.multi) { badge.style.display = 'inline-block'; badge.innerText = c.multi + "x"; } else { badge.style.display = 'none'; }
-            document.getElementById('focus-comment').innerText = c.comment || "";
-            document.getElementById('focus-date').innerText = getValidity(c.validUntil).text;
-            document.getElementById('focus-overlay').classList.remove('hidden');
-            document.getElementById('focus-overlay').classList.add('flex');
-            JsBarcode("#focus-barcode", c.code, { format: "CODE128", width: 4, height: 150, displayValue: false });
-        }
-        function closeFocus() { document.getElementById('focus-overlay').classList.add('hidden'); document.getElementById('focus-overlay').classList.remove('flex'); }
-        
-        function getValidity(d) {
-            if(!d) return { text: 'Dauerhaft', color: 'text-green-500' };
-            const diff = Math.ceil((new Date(d) - new Date().setHours(0,0,0,0)) / 86400000);
-            if(diff <= 0) return { text: 'Heute!', color: 'text-red-500' };
-            if(diff <= 3) return { text: `${diff} Tage`, color: 'text-yellow-500' };
-            return { text: formatDate(d), color: 'text-gray-500' };
-        }
-        function formatDate(s) { if(!s) return ""; const d = new Date(s); return `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`; }
-        function getBrandColor(n) { 
-            const x = n.toLowerCase();
-            if(x.includes('netto')) return '#E2001A';
-            if(x.includes('edeka')) return '#F7E017';
-            if(x.includes('dm')) return '#6A2D91';
-            return '#0A84FF';
-        }
-    </script>
-</body>
-</html>
+// Preview
+struct ModernInputView_Previews: PreviewProvider {
+    static var previews: some View {
+        ModernInputView()
+    }
+}
