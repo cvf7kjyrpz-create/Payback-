@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Eingabe</title>
+    <title>Neuer Coupon</title>
     <style>
-        /* --- DESIGN SYSTEM (Apple Modern) --- */
+        /* --- DESIGN SYSTEM (Apple Modern Style) --- */
         :root {
             --bg-color: #ffffff;
             --card-bg: #f2f2f7; /* Helles Grau für Felder */
             --text-color: #000000;
-            --accent-color: #000000; /* Schwarz statt Blau für Buttons */
+            --accent-color: #000000; /* Schwarz statt Blau */
             --sub-text: #8e8e93;
-            --border-radius: 14px;
+            --border-radius: 12px;
             --safe-area-top: env(safe-area-inset-top);
-            --header-height: 60px;
+            --header-height: 50px;
         }
 
-        /* Dunkelmodus automatisch */
+        /* Dunkelmodus Unterstützung */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #000000;
@@ -33,87 +33,63 @@
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            /* Verhindert "Bouncing" des ganzen Screens */
-            overscroll-behavior-y: none;
+            overscroll-behavior-y: none; /* Verhindert Wackeln */
         }
 
-        /* --- FESTE KOPFZEILE (Rutscht nicht weg!) --- */
+        /* --- FESTE KOPFZEILE --- */
         header {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             background-color: var(--bg-color);
-            /* Blur Effekt wie bei iOS */
-            backdrop-filter: saturate(180%) blur(20px); 
+            /* Transparenz-Effekt wie bei iOS */
+            backdrop-filter: saturate(180%) blur(20px);
             -webkit-backdrop-filter: saturate(180%) blur(20px);
-            background-color: rgba(255, 255, 255, 0.85); 
+            background-color: rgba(255, 255, 255, 0.9);
             z-index: 9999;
             padding-top: var(--safe-area-top);
             border-bottom: 0.5px solid rgba(128,128,128,0.2);
-        }
-        
-        @media (prefers-color-scheme: dark) {
-            header { background-color: rgba(0, 0, 0, 0.85); }
-        }
-
-        .header-inner {
             height: var(--header-height);
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 20px;
+            align-items: center;
+            justify-content: space-between;
+            box-sizing: border-box; /* Wichtig für Padding */
+            padding-left: 20px;
+            padding-right: 20px;
         }
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        @media (prefers-color-scheme: dark) {
+            header { background-color: rgba(0, 0, 0, 0.9); }
         }
 
         h1 {
             margin: 0;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
+            flex-grow: 1;
+            text-align: center;
         }
 
-        /* Kleine Speicheranzeige */
-        .storage-mini {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 4px;
-        }
-        .storage-bar {
-            width: 100px;
-            height: 4px;
-            background: #e5e5ea;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .storage-fill {
-            width: 45%;
-            height: 100%;
-            background-color: #34c759;
-        }
-        .storage-text {
-            font-size: 10px;
+        .close-btn {
+            font-size: 24px;
             color: var(--sub-text);
+            cursor: pointer;
+            width: 30px; /* Platzhalter Breite */
         }
 
         /* --- SCROLLBARER INHALT --- */
         main {
-            /* WICHTIG: Padding oben = Header Höhe + Safe Area + Extra Platz */
             padding-top: calc(var(--header-height) + var(--safe-area-top) + 20px);
             padding-bottom: 40px;
             padding-left: 20px;
             padding-right: 20px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
         }
 
-        /* --- 1. FOTO UPLOAD (Modern) --- */
+        /* --- 1. FOTO UPLOAD --- */
         .photo-card {
             background-color: var(--card-bg);
             border-radius: var(--border-radius);
@@ -135,46 +111,46 @@
             cursor: pointer;
         }
 
-        .photo-placeholder {
+        .photo-content {
             text-align: center;
             color: var(--sub-text);
         }
         
-        .photo-placeholder svg {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 8px;
-            fill: currentColor;
-        }
-
         #preview-img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* Bild füllt den Bereich schön aus */
             display: none;
             position: absolute;
             z-index: 5;
         }
 
-        /* --- 2. BUTTONS (dm, Edeka...) --- */
+        /* --- 2. STORE BUTTONS (Scrollbar) --- */
+        .label-text {
+            font-size: 13px;
+            color: var(--sub-text);
+            margin-bottom: 8px;
+            margin-left: 4px;
+            font-weight: 600;
+        }
+
         .chip-scroll {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 5px;
-            /* Scrollbar ausblenden */
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
         }
-        .chip-scroll::-webkit-scrollbar { display: none; }
+        .chip-scroll::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
 
         .chip {
             background-color: var(--card-bg);
-            border: 1px solid rgba(128,128,128,0.1);
-            padding: 10px 20px;
+            border: none;
+            padding: 12px 20px;
             border-radius: 20px;
             font-size: 15px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-color);
             white-space: nowrap;
             cursor: pointer;
@@ -182,16 +158,17 @@
         }
 
         .chip.active {
-            background-color: var(--text-color); /* Schwarz (oder Weiß im Darkmode) */
-            color: var(--bg-color); /* Textfarbe invertiert */
+            background-color: var(--text-color);
+            color: var(--bg-color);
         }
 
-        /* --- 3. ZEITRAUM (Von - Bis) --- */
-        .time-row {
+        /* --- 3. ZEITRAUM & WERT --- */
+        .row {
             display: flex;
             gap: 15px;
         }
-        .input-wrapper {
+
+        .input-box {
             background-color: var(--card-bg);
             border-radius: var(--border-radius);
             padding: 12px 16px;
@@ -199,27 +176,9 @@
             display: flex;
             flex-direction: column;
         }
-        .input-label {
-            font-size: 11px;
-            color: var(--sub-text);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        input[type="time"], input[type="number"], input[type="text"] {
-            background: transparent;
-            border: none;
-            font-size: 17px;
-            color: var(--text-color);
-            font-family: inherit;
-            width: 100%;
-            outline: none;
-            padding: 0;
-            margin: 0;
-        }
 
-        /* --- 4. ZAHL MIT EINHEIT --- */
-        .number-unit-wrapper {
+        /* Spezielles Design für das "Fach" Feld */
+        .fach-wrapper {
             background-color: var(--card-bg);
             border-radius: var(--border-radius);
             padding: 16px;
@@ -227,18 +186,34 @@
             align-items: center;
             justify-content: space-between;
         }
-        .number-unit-wrapper input {
-            font-size: 24px;
-            font-weight: 600;
-            width: 70%;
+
+        input {
+            background: transparent;
+            border: none;
+            font-size: 17px;
+            color: var(--text-color);
+            width: 100%;
+            outline: none;
+            font-family: inherit;
         }
-        .unit-label {
-            font-size: 24px;
+
+        input[type="date"] {
+            min-height: 24px; /* Damit man es gut trifft */
+        }
+
+        .fach-input {
+            font-size: 28px;
+            font-weight: 700;
+            width: 60%;
+        }
+
+        .fach-unit {
+            font-size: 20px;
             font-weight: 600;
             color: var(--sub-text);
         }
 
-        /* --- 5. NOTIZ FELD --- */
+        /* --- 4. NOTIZ --- */
         textarea {
             background-color: var(--card-bg);
             border: none;
@@ -250,8 +225,8 @@
             font-family: inherit;
             resize: none;
             min-height: 100px;
-            box-sizing: border-box;
             outline: none;
+            box-sizing: border-box;
         }
 
         /* --- SPEICHERN BUTTON --- */
@@ -264,10 +239,10 @@
             font-size: 17px;
             font-weight: 700;
             border-radius: var(--border-radius);
-            margin-top: 10px;
             cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: 10px;
         }
+        
         .save-btn:active {
             opacity: 0.8;
             transform: scale(0.98);
@@ -278,65 +253,58 @@
 <body>
 
     <header>
-        <div class="header-inner">
-            <div class="header-top">
-                <h1>Neuer Eintrag</h1>
-                <span style="font-size: 24px; color: var(--sub-text); cursor: pointer;">&times;</span>
-            </div>
-            <div class="storage-mini">
-                <span style="font-size: 12px;">💾</span>
-                <div class="storage-bar"><div class="storage-fill"></div></div>
-                <span class="storage-text">45%</span>
-            </div>
-        </div>
-    </header>
+        <div class="close-btn">&times;</div> <h1>Neuer Coupon</h1>
+        <div class="close-btn" style="opacity: 0;">&times;</div> </header>
 
     <main>
 
         <div class="photo-card" id="photoCard">
             <input type="file" accept="image/*" class="photo-input" id="photoInput">
+            
             <img id="preview-img" src="" alt="Vorschau">
             
-            <div class="photo-placeholder" id="placeholder">
-                <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v12h16V6h-2.54l-1.63-1.63L15 4H9l-.83.37L6.54 6H4zm8 1a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-                <div style="font-size: 14px; font-weight: 500;">Foto hinzufügen</div>
+            <div class="photo-content" id="placeholder">
+                <div style="font-size: 32px; margin-bottom: 5px;">📷</div>
+                <div style="font-size: 14px; font-weight: 500;">Coupon fotografieren</div>
             </div>
         </div>
 
         <div>
-            <div class="input-label" style="margin-bottom: 10px; margin-left: 5px;">Laden / Ort</div>
+            <div class="label-text">Gültig bei</div>
             <div class="chip-scroll">
                 <button class="chip" onclick="selectStore(this, 'dm')">dm</button>
                 <button class="chip" onclick="selectStore(this, 'Edeka')">Edeka</button>
                 <button class="chip" onclick="selectStore(this, 'Rewe')">Rewe</button>
-                <button class="chip" onclick="selectStore(this, 'Aldi')">Aldi</button>
-                <button class="chip" onclick="selectStore(this, 'Tankstelle')">Tankstelle</button>
+                <button class="chip" onclick="selectStore(this, 'Rossmann')">Rossmann</button>
+                <button class="chip" onclick="selectStore(this, 'Penny')">Penny</button>
+                <button class="chip" onclick="selectStore(this, 'Lidl')">Lidl</button>
             </div>
         </div>
 
-        <div class="time-row">
-            <div class="input-wrapper">
-                <span class="input-label">Von</span>
-                <input type="time" id="timeFrom">
+        <div class="fach-wrapper">
+            <input type="number" class="fach-input" placeholder="20" id="fachInput">
+            <span class="fach-unit">Fach °P</span>
+        </div>
+
+        <div class="row">
+            <div class="input-box">
+                <div class="label-text" style="margin:0 0 5px 0; font-size:10px;">GÜLTIG VON</div>
+                <input type="date" id="dateFrom">
             </div>
-            <div class="input-wrapper">
-                <span class="input-label">Bis</span>
-                <input type="time" id="timeTo">
+            <div class="input-box">
+                <div class="label-text" style="margin:0 0 5px 0; font-size:10px;">GÜLTIG BIS</div>
+                <input type="date" id="dateTo">
             </div>
         </div>
 
-        <div class="number-unit-wrapper">
-            <input type="number" placeholder="0,00" step="0.01" id="amountInput">
-            <span class="unit-label">€</span> </div>
+        <textarea placeholder="Notiz (z.B. Mindestumsatz 2€)..." id="noteInput"></textarea>
 
-        <textarea placeholder="Notiz schreiben..." id="noteInput"></textarea>
-
-        <button class="save-btn" onclick="saveEntry()">Speichern</button>
+        <button class="save-btn" onclick="saveCoupon()">Coupon speichern</button>
 
     </main>
 
     <script>
-        // --- Foto Vorschau Logik ---
+        // --- Foto Vorschau ---
         const photoInput = document.getElementById('photoInput');
         const previewImg = document.getElementById('preview-img');
         const placeholder = document.getElementById('placeholder');
@@ -356,31 +324,25 @@
             }
         });
 
-        // --- Store Button Logik (Auswahl) ---
+        // --- Händler Auswahl ---
         let selectedStore = "";
-
-        function selectStore(btn, storeName) {
-            // Alle Buttons zurücksetzen
+        function selectStore(btn, name) {
             document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
-            // Gewählten Button aktivieren
             btn.classList.add('active');
-            selectedStore = storeName;
+            selectedStore = name;
         }
 
-        // --- Speichern (Beispiel) ---
-        function saveEntry() {
-            const amount = document.getElementById('amountInput').value;
+        // --- Speichern ---
+        function saveCoupon() {
+            const fach = document.getElementById('fachInput').value;
+            const bis = document.getElementById('dateTo').value;
             
-            if (!selectedStore && !amount) {
-                alert("Bitte zumindest einen Laden oder Betrag eingeben.");
+            if (!fach && !selectedStore) {
+                alert("Bitte zumindest Händler oder 'Fach' eingeben.");
                 return;
             }
-
-            alert("Gespeichert:\n" + 
-                  (selectedStore ? "Ort: " + selectedStore + "\n" : "") +
-                  "Betrag: " + amount + " €");
             
-            // Optional: Felder leeren
+            alert("Coupon gespeichert!\nHändler: " + (selectedStore || "-") + "\nWert: " + fach + " Fach\nGültig bis: " + (bis || "-"));
         }
     </script>
 </body>
