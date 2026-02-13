@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Smart Wallet Pro</title>
+    <title>Smart Wallet Pure</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,130 +15,148 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        :root { --bg-body: #000000; --bg-card: #1C1C1E; --bg-input: #2C2C2E; --accent: #0A84FF; }
-        body { background-color: var(--bg-body); color: white; font-family: -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        /* Modern Dark Theme Palette */
+        :root { 
+            --bg-body: #050505; 
+            --bg-card: #151515; 
+            --bg-input: #1F1F1F; 
+            --accent: #3b82f6; 
+            --border: #333;
+        }
+
+        body { 
+            background-color: var(--bg-body); 
+            color: #eee; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior-y: none; 
+        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Modern Input Reset */
+        /* Input Styling Reset */
         input, select { 
             color-scheme: dark; 
-            background: #1C1C1E; 
+            background: var(--bg-input); 
             color: white; 
-            border: 1px solid #333; 
+            border: 1px solid #2a2a2a; 
             outline: none; 
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
-        input:focus { border-color: var(--accent); background: #222; }
+        input:focus { 
+            border-color: var(--accent); 
+            background: #252525; 
+            box-shadow: 0 0 0 1px var(--accent);
+        }
         
-        /* Folder Grid Animation */
-        .folder-card { transition: transform 0.2s; }
-        .folder-card:active { transform: scale(0.96); opacity: 0.9; }
+        /* Animations */
+        .folder-card { transition: transform 0.2s, background-color 0.2s; }
+        .folder-card:active { transform: scale(0.97); background-color: #222; }
 
-        /* Loader */
-        .loader { border: 3px solid #333; border-top: 3px solid #0A84FF; border-radius: 50%; width: 30px; height: 30px; animation: spin 0.8s linear infinite; }
+        .loader { border: 2px solid #333; border-top: 2px solid var(--accent); border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* Chips */
-        .chip { transition: all 0.2s; border: 1px solid #333; }
-        .chip.active { background-color: white; color: black; border-color: white; font-weight: 700; }
+        .chip { transition: all 0.2s; border: 1px solid #2a2a2a; background: #151515; color: #888; }
+        .chip.active { background-color: #eee; color: black; border-color: white; font-weight: 600; }
     </style>
 </head>
 <body class="safe-area-inset-top pb-40">
 
-    <div class="px-6 pt-16 pb-4 sticky top-0 z-20 bg-black/90 backdrop-blur-xl border-b border-white/10 flex justify-between items-center">
+    <div class="px-6 pt-16 pb-4 sticky top-0 z-20 bg-black/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <button id="back-btn" onclick="closeFolder()" class="hidden bg-[#1C1C1E] w-10 h-10 rounded-full flex items-center justify-center border border-white/10">
-                <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            <button id="back-btn" onclick="closeFolder()" class="hidden w-8 h-8 rounded-full bg-[#222] flex items-center justify-center">
+                <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
-            <div>
-                <h1 id="page-title" class="text-2xl font-bold tracking-tight">Meine Coupons</h1>
-            </div>
+            <h1 id="page-title" class="text-xl font-bold tracking-tight">Wallet</h1>
         </div>
         <div class="flex gap-3">
-            <button onclick="document.getElementById('backup-menu').classList.toggle('hidden')" class="bg-[#1C1C1E] w-10 h-10 rounded-full flex items-center justify-center text-gray-400 border border-white/10">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            <button onclick="document.getElementById('backup-menu').classList.toggle('hidden')" class="w-9 h-9 rounded-full bg-[#222] flex items-center justify-center text-gray-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </button>
-            <button onclick="toggleForm()" class="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center text-2xl font-light shadow-lg shadow-blue-900/40 active:scale-90 transition-transform">+</button>
+            <button onclick="toggleForm()" class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-xl font-light shadow-lg shadow-blue-900/40 active:scale-90 transition-transform">+</button>
         </div>
     </div>
 
-    <div id="backup-menu" class="hidden absolute right-6 top-28 bg-[#1C1C1E] p-4 rounded-xl shadow-2xl z-30 border border-white/10 w-64 backdrop-blur-xl">
-        <button onclick="exportData()" class="w-full text-left p-3 hover:bg-white/5 rounded-lg text-sm mb-2 text-gray-300">📥 Backup speichern</button>
-        <button onclick="document.getElementById('import-input').click()" class="w-full text-left p-3 hover:bg-white/5 rounded-lg text-sm text-blue-400">📤 Backup laden</button>
+    <div id="backup-menu" class="hidden absolute right-6 top-28 bg-[#151515] p-2 rounded-xl shadow-2xl z-30 border border-white/10 w-56 backdrop-blur-xl">
+        <button onclick="exportData()" class="w-full text-left p-3 hover:bg-white/5 rounded-lg text-xs text-gray-300">📥 Backup speichern</button>
+        <button onclick="document.getElementById('import-input').click()" class="w-full text-left p-3 hover:bg-white/5 rounded-lg text-xs text-blue-400">📤 Backup laden</button>
         <input type="file" id="import-input" class="hidden" accept=".json" onchange="importData(this)">
     </div>
 
-    <div id="ocr-loader" class="fixed inset-0 z-[60] bg-black/80 hidden flex-col items-center justify-center backdrop-blur-md">
-        <div class="loader mb-4"></div>
-        <h3 class="text-lg font-bold text-white">Suche Zahlen...</h3>
-        <p class="text-xs text-gray-500 mt-2">Bild wird optimiert</p>
+    <div id="ocr-loader" class="fixed inset-0 z-[60] bg-black/90 hidden flex-col items-center justify-center backdrop-blur-md">
+        <div class="loader mb-3"></div>
+        <h3 class="text-sm font-bold text-white">Scanne...</h3>
     </div>
 
-    <div id="add-form" class="hidden fixed inset-0 z-50 bg-black pt-10 px-6 pb-20 overflow-y-auto">
+    <div id="add-form" class="hidden fixed inset-0 z-50 bg-[#050505] pt-8 px-6 pb-20 overflow-y-auto">
         
         <div class="flex justify-between items-center mb-8">
-            <h2 class="text-2xl font-bold">Neuer Coupon</h2>
-            <button onclick="toggleForm()" class="text-gray-500 bg-[#1C1C1E] px-4 py-2 rounded-full text-sm font-medium">Abbrechen</button>
+            <h2 class="text-xl font-bold text-white">Neuer Coupon</h2>
+            <button onclick="toggleForm()" class="text-gray-500 hover:text-white text-sm font-medium transition-colors">Abbrechen</button>
         </div>
 
         <div class="space-y-6">
             
             <div>
-                <div class="flex gap-2 overflow-x-auto no-scrollbar mb-3">
-                    <button onclick="setRetailerInput('Edeka')" class="chip active bg-[#1C1C1E] px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap">Edeka</button>
-                    <button onclick="setRetailerInput('Netto')" class="chip bg-[#1C1C1E] px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap">Netto</button>
-                    <button onclick="setRetailerInput('DM')" class="chip bg-[#1C1C1E] px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap">dm</button>
-                    <button onclick="setRetailerInput('Rossmann')" class="chip bg-[#1C1C1E] px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap">Rossmann</button>
-                    <button onclick="setRetailerInput('Payback')" class="chip bg-[#1C1C1E] px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap">Payback</button>
-                    <button onclick="setRetailerInput('')" class="chip bg-[#1C1C1E] px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap">Anderer</button>
+                <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-3 block ml-1">Händler Wählen</label>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <button onclick="setRetailerInput('Edeka')" class="chip active px-4 py-2 rounded-lg text-xs whitespace-nowrap">Edeka</button>
+                    <button onclick="setRetailerInput('Netto')" class="chip px-4 py-2 rounded-lg text-xs whitespace-nowrap">Netto</button>
+                    <button onclick="setRetailerInput('DM')" class="chip px-4 py-2 rounded-lg text-xs whitespace-nowrap">dm</button>
+                    <button onclick="setRetailerInput('Rossmann')" class="chip px-4 py-2 rounded-lg text-xs whitespace-nowrap">Rossmann</button>
+                    <button onclick="setRetailerInput('Payback')" class="chip px-4 py-2 rounded-lg text-xs whitespace-nowrap">Payback</button>
+                    <button onclick="setRetailerInput('')" class="chip px-4 py-2 rounded-lg text-xs whitespace-nowrap">Eigen</button>
                 </div>
-                <input type="text" id="retailer-input" placeholder="Händler Name" class="hidden w-full p-4 rounded-2xl bg-[#1C1C1E] text-white text-lg border-none focus:ring-1 focus:ring-blue-500">
+                <input type="text" id="retailer-input" placeholder="Name eingeben" class="hidden w-full mt-3 px-4 py-3 rounded-xl text-sm bg-[#1F1F1F] focus:ring-1 focus:ring-blue-500">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="document.getElementById('camera-input').click()" class="bg-[#1C1C1E] border border-[#333] py-4 rounded-2xl flex flex-col items-center justify-center gap-2 active:bg-blue-600/20 active:border-blue-500 transition-colors group">
-                    <span class="text-2xl group-active:scale-110 transition-transform">📷</span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-active:text-blue-400">Kamera</span>
+                <button onclick="document.getElementById('camera-input').click()" class="bg-[#151515] border border-[#2a2a2a] py-3 rounded-xl flex items-center justify-center gap-2 active:border-blue-500 transition-colors group hover:bg-[#1a1a1a]">
+                    <span class="text-lg">📷</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-active:text-blue-400">Kamera</span>
                 </button>
-                <button onclick="document.getElementById('gallery-input').click()" class="bg-[#1C1C1E] border border-[#333] py-4 rounded-2xl flex flex-col items-center justify-center gap-2 active:bg-blue-600/20 active:border-blue-500 transition-colors group">
-                    <span class="text-2xl group-active:scale-110 transition-transform">🖼️</span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 group-active:text-blue-400">Upload</span>
+                <button onclick="document.getElementById('gallery-input').click()" class="bg-[#151515] border border-[#2a2a2a] py-3 rounded-xl flex items-center justify-center gap-2 active:border-blue-500 transition-colors group hover:bg-[#1a1a1a]">
+                    <span class="text-lg">🖼️</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-active:text-blue-400">Bild</span>
                 </button>
                 <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="processImage(this)">
                 <input type="file" id="gallery-input" accept="image/*" class="hidden" onchange="processImage(this)">
                 <canvas id="preprocess-canvas" class="hidden"></canvas>
             </div>
 
-            <div class="grid grid-cols-3 gap-4">
-                <div class="col-span-2 space-y-2">
-                    <label class="text-xs text-gray-500 uppercase font-bold ml-1">Barcode Nummer</label>
-                    <input type="number" id="code-input" placeholder="000000000" class="w-full p-4 rounded-2xl text-xl font-mono tracking-widest bg-black border border-[#333] focus:border-blue-500">
+            <div class="space-y-5">
+                <div>
+                    <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 block ml-1">Nummer</label>
+                    <input type="number" id="code-input" placeholder="Code scannen oder tippen" class="w-full px-4 py-3.5 rounded-xl font-mono text-base tracking-wider bg-[#121212] border border-[#333] focus:border-blue-500 placeholder-gray-700">
                 </div>
-                <div class="space-y-2">
-                    <label class="text-xs text-gray-500 uppercase font-bold ml-1">Faktor</label>
-                    <input type="number" id="multi-input" placeholder="z.B. 10" class="w-full p-4 rounded-2xl text-xl font-bold text-center text-yellow-400 bg-[#1C1C1E] border border-[#333] focus:border-yellow-400">
+
+                <div class="grid grid-cols-3 gap-5">
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 block ml-1">Faktor</label>
+                        <input type="number" id="multi-input" placeholder="10" class="w-full px-2 py-3 rounded-xl text-center font-bold text-yellow-500 bg-[#1F1F1F]">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 block ml-1">Notiz</label>
+                        <input type="text" id="comment-input" placeholder="Optional" class="w-full px-4 py-3 rounded-xl text-sm bg-[#1F1F1F] text-gray-300">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 block ml-1">Start</label>
+                        <input type="date" id="valid-from" class="w-full px-3 py-3 rounded-xl text-xs text-gray-400 bg-[#1F1F1F]">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 block ml-1">Ende</label>
+                        <input type="date" id="valid-until" class="w-full px-3 py-3 rounded-xl text-xs font-bold text-white bg-[#1F1F1F]">
+                    </div>
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label class="text-xs text-gray-500 uppercase font-bold ml-1">Notiz (Optional)</label>
-                <input type="text" id="comment-input" placeholder="z.B. Nur Tiernahrung" class="w-full p-4 rounded-2xl bg-[#1C1C1E] text-sm text-gray-300">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <label class="text-xs text-gray-500 uppercase font-bold ml-1">Gültig Von</label>
-                    <input type="date" id="valid-from" class="w-full p-3 rounded-2xl bg-[#1C1C1E] text-sm text-gray-400">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-xs text-gray-500 uppercase font-bold ml-1">Gültig Bis</label>
-                    <input type="date" id="valid-until" class="w-full p-3 rounded-2xl bg-[#1C1C1E] text-sm font-bold text-white">
-                </div>
-            </div>
-
-            <div class="pt-4 pb-10">
-                <button onclick="saveCoupon()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-lg shadow-lg shadow-blue-900/20 active:scale-95 transition-transform">
-                    Coupon Speichern
+            <div class="pt-6">
+                <button onclick="saveCoupon()" class="w-full bg-blue-600 py-3.5 rounded-xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-blue-900/20 active:scale-95 transition-transform hover:bg-blue-500">
+                    Speichern
                 </button>
             </div>
         </div>
@@ -148,28 +166,28 @@
 
     <div id="list-view" class="hidden px-4 space-y-3 mt-4"></div>
 
-    <div id="focus-overlay" class="fixed inset-0 z-50 bg-white hidden flex-col items-center justify-center p-6" onclick="closeFocus()">
-        <h2 id="focus-retailer" class="text-black text-3xl font-bold mb-2 text-center">Retailer</h2>
-        <div id="focus-multi" class="bg-red-600 text-white px-5 py-1.5 rounded-full font-bold mb-6 text-xl shadow-lg"></div>
-        <p id="focus-comment" class="text-gray-600 text-center mb-6 font-medium italic px-10"></p>
+    <div id="focus-overlay" class="fixed inset-0 z-50 bg-[#fff] hidden flex-col items-center justify-center p-6" onclick="closeFocus()">
+        <h2 id="focus-retailer" class="text-black text-3xl font-bold mb-2 text-center tracking-tight"></h2>
+        <div id="focus-multi" class="bg-red-600 text-white px-5 py-1 rounded-full font-bold mb-8 text-lg shadow-md"></div>
+        <p id="focus-comment" class="text-gray-500 text-center mb-6 font-medium italic px-10 text-lg"></p>
         
-        <div class="w-full bg-white p-2 flex justify-center">
-            <svg id="focus-barcode" class="w-full h-auto max-h-[30vh]"></svg>
+        <div class="w-full p-4 flex justify-center bg-white">
+            <svg id="focus-barcode" class="w-full h-auto max-h-[35vh]"></svg>
         </div>
-        <p id="focus-code" class="text-black font-mono text-3xl mt-4 tracking-[0.2em] font-bold text-center"></p>
+        <p id="focus-code" class="text-black font-mono text-3xl mt-6 tracking-[0.25em] font-bold text-center"></p>
         
-        <div class="mt-8 text-center">
-            <p class="text-gray-400 text-xs uppercase font-bold mb-1">Gültigkeit</p>
+        <div class="mt-10 text-center">
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-widest mb-1">Gültigkeit</p>
             <p id="focus-date" class="text-black font-bold text-xl"></p>
         </div>
-        <p class="text-gray-300 text-sm mt-auto pb-10 animate-pulse">Zum Schließen tippen</p>
+        <p class="text-gray-300 text-xs mt-auto pb-8 animate-pulse uppercase tracking-widest">Tippen zum Schließen</p>
     </div>
 
     <div id="share-container" class="fixed top-[-9999px] left-[-9999px] width-[400px] bg-white p-6 text-black"></div>
 
     <script>
         // --- DATA ---
-        let coupons = JSON.parse(localStorage.getItem('smart_wallet_v2')) || [];
+        let coupons = JSON.parse(localStorage.getItem('smart_wallet_pure')) || [];
         let currentFolder = null;
         let selectedRetailer = 'Edeka';
 
@@ -179,53 +197,33 @@
             renderDashboard();
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('valid-from').value = today;
-            setRetailerInput('Edeka'); // Default
+            setRetailerInput('Edeka');
         });
 
-        // --- CORE LOGIC ---
+        // --- LOGIC ---
         function cleanupExpired() {
             const today = new Date();
             today.setHours(0,0,0,0);
-            const initialCount = coupons.length;
-            coupons = coupons.filter(c => {
-                if(!c.validUntil) return true;
-                const expDate = new Date(c.validUntil);
-                return expDate >= today;
-            });
-            if(coupons.length < initialCount) saveToStorage();
+            const initial = coupons.length;
+            coupons = coupons.filter(c => !c.validUntil || new Date(c.validUntil) >= today);
+            if(coupons.length < initial) saveToStorage();
         }
 
         function saveCoupon() {
-            // Check manual input visibility
             let retailer = selectedRetailer;
             const manualInput = document.getElementById('retailer-input');
-            if(!manualInput.classList.contains('hidden')) {
-                retailer = manualInput.value.trim();
-            }
+            if(!manualInput.classList.contains('hidden')) retailer = manualInput.value.trim();
 
             const codeRaw = document.getElementById('code-input').value;
             const code = codeRaw.replace(/\s/g, ''); 
-            const multi = document.getElementById('multi-input').value; // Nur Zahl!
+            const multi = document.getElementById('multi-input').value;
             const comment = document.getElementById('comment-input').value;
             const validFrom = document.getElementById('valid-from').value;
             const validUntil = document.getElementById('valid-until').value;
 
-            if (!retailer || !code) {
-                alert("Bitte Händler und Code eingeben.");
-                return;
-            }
+            if (!retailer || !code) { alert("Fehlende Daten"); return; }
 
-            const newCoupon = {
-                id: Date.now(),
-                retailer: retailer,
-                code: code,
-                multi: multi, 
-                comment: comment,
-                validFrom: validFrom,
-                validUntil: validUntil
-            };
-
-            coupons.push(newCoupon);
+            coupons.push({ id: Date.now(), retailer, code, multi, comment, validFrom, validUntil });
             saveToStorage();
             
             // Reset
@@ -235,41 +233,25 @@
             toggleForm();
             
             if(currentFolder === retailer) renderList(retailer);
-            else { closeFolder(); }
+            else closeFolder();
         }
 
-        // --- UI LOGIC ---
+        // --- UI ---
         function setRetailerInput(name) {
             selectedRetailer = name;
             const input = document.getElementById('retailer-input');
-            
-            // Chips UI
             document.querySelectorAll('.chip').forEach(btn => {
-                if(btn.innerText === (name || 'Anderer')) {
-                    btn.classList.add('active', 'bg-white', 'text-black', 'border-white');
-                    btn.classList.remove('bg-[#1C1C1E]');
-                } else {
-                    btn.classList.remove('active', 'bg-white', 'text-black', 'border-white');
-                    btn.classList.add('bg-[#1C1C1E]');
-                }
+                const isActive = btn.innerText === (name || 'Eigen');
+                btn.className = isActive ? 'chip active px-4 py-2 rounded-lg text-xs whitespace-nowrap' : 'chip px-4 py-2 rounded-lg text-xs whitespace-nowrap';
             });
-
-            if(name === '') {
-                input.classList.remove('hidden');
-                input.value = '';
-                input.focus();
-            } else {
-                input.classList.add('hidden');
-                input.value = name;
-            }
+            if(name === '') { input.classList.remove('hidden'); input.value = ''; input.focus(); } 
+            else { input.classList.add('hidden'); input.value = name; }
         }
 
         function toggleForm() {
             const form = document.getElementById('add-form');
             form.classList.toggle('hidden');
-            if(!form.classList.contains('hidden') && currentFolder) {
-                setRetailerInput(currentFolder);
-            }
+            if(!form.classList.contains('hidden') && currentFolder) setRetailerInput(currentFolder);
         }
 
         function renderDashboard() {
@@ -278,39 +260,36 @@
             const retailers = [...new Set(coupons.map(c => c.retailer))].sort();
 
             if (retailers.length === 0) {
-                view.innerHTML = `<div class="col-span-2 text-center mt-20 opacity-40"><div class="text-6xl mb-4">📂</div><p>Leer. Drücke +</p></div>`;
+                view.innerHTML = `<div class="col-span-2 text-center mt-32 opacity-30"><div class="text-5xl mb-4">✨</div><p class="text-sm">Alles leer.</p></div>`;
                 return;
             }
 
             retailers.forEach(r => {
                 const count = coupons.filter(c => c.retailer === r).length;
                 const card = document.createElement('div');
-                card.className = `folder-card bg-[#1C1C1E] p-5 rounded-2xl border border-white/5 shadow-lg flex flex-col justify-between h-32 cursor-pointer relative overflow-hidden`;
-                // Farbiger Akzent an der Seite basierend auf Retailer
-                const accent = getBrandColorHex(r);
-                card.style.borderLeft = `4px solid ${accent}`;
-                
+                card.className = `folder-card bg-[#151515] p-5 rounded-2xl border border-[#222] relative overflow-hidden h-28 cursor-pointer`;
+                card.style.borderLeft = `3px solid ${getBrandColor(r)}`;
                 card.onclick = () => openFolder(r);
                 card.innerHTML = `
-                    <div class="flex justify-between items-start z-10">
-                        <h3 class="text-lg font-bold truncate text-white">${r}</h3>
-                        <span class="bg-black/50 text-white text-xs font-bold px-2 py-1 rounded-lg">${count}</span>
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-base font-bold text-white">${r}</h3>
+                        <span class="bg-[#222] text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded">${count}</span>
                     </div>
-                    <div class="z-10 text-xs text-gray-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                        Öffnen <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <div class="absolute bottom-4 left-5 text-[10px] text-gray-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                        Öffnen &rarr;
                     </div>
                 `;
                 view.appendChild(card);
             });
         }
 
-        function openFolder(retailerName) {
-            currentFolder = retailerName;
+        function openFolder(r) {
+            currentFolder = r;
             document.getElementById('dashboard-view').classList.add('hidden');
             document.getElementById('list-view').classList.remove('hidden');
             document.getElementById('back-btn').classList.remove('hidden');
-            document.getElementById('page-title').innerText = retailerName;
-            renderList(retailerName);
+            document.getElementById('page-title').innerText = r;
+            renderList(r);
         }
 
         function closeFolder() {
@@ -318,45 +297,43 @@
             document.getElementById('dashboard-view').classList.remove('hidden');
             document.getElementById('list-view').classList.add('hidden');
             document.getElementById('back-btn').classList.add('hidden');
-            document.getElementById('page-title').innerText = "Meine Coupons";
+            document.getElementById('page-title').innerText = "Wallet";
             renderDashboard();
         }
 
-        function renderList(filterRetailer) {
+        function renderList(filter) {
             const list = document.getElementById('list-view');
             list.innerHTML = '';
-            const filtered = coupons
-                .filter(c => c.retailer === filterRetailer)
-                .sort((a, b) => (a.validUntil || '9999') > (b.validUntil || '9999') ? 1 : -1);
+            const filtered = coupons.filter(c => c.retailer === filter).sort((a, b) => (a.validUntil || '9999') > (b.validUntil || '9999') ? 1 : -1);
 
             filtered.forEach(c => {
-                const dateInfo = getValidityStatus(c.validUntil);
+                const dateInfo = getValidity(c.validUntil);
                 const div = document.createElement('div');
-                div.className = `bg-[#1C1C1E] p-4 rounded-2xl border border-white/5 shadow-sm relative`;
+                div.className = `bg-[#151515] p-4 rounded-xl border border-[#222] relative`;
                 div.innerHTML = `
                     <div class="flex justify-between items-start" onclick="openFocus(${c.id})">
                         <div class="flex-1 pr-4">
-                            ${c.multi ? `<span class="inline-block bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded mb-1.5">${c.multi} FACH</span>` : ''}
-                            ${c.comment ? `<p class="text-sm font-medium text-white mb-1 line-clamp-1">"${c.comment}"</p>` : ''}
+                            ${c.multi ? `<span class="inline-block bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded mb-1">${c.multi}x</span>` : ''}
+                            ${c.comment ? `<p class="text-xs font-medium text-gray-300 mb-1 line-clamp-1">"${c.comment}"</p>` : ''}
                             <p class="text-[10px] uppercase font-bold mt-1 ${dateInfo.color}">${dateInfo.text}</p>
                         </div>
                         <div class="text-right">
-                             <span class="font-mono text-gray-600 text-xs tracking-widest block mb-2">${c.code}</span>
-                             <div class="w-8 h-8 rounded-full bg-[#222] flex items-center justify-center text-gray-400">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                             <span class="font-mono text-gray-500 text-[10px] tracking-widest block mb-2">${c.code}</span>
+                             <div class="w-6 h-6 rounded-full bg-[#222] flex items-center justify-center text-gray-500 ml-auto">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                              </div>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-5 mt-3 pt-3 border-t border-white/5">
-                        <button onclick="shareAsImage(${c.id})" class="text-blue-400 text-[10px] font-bold uppercase tracking-wider">Teilen</button>
-                        <button onclick="deleteCoupon(${c.id})" class="text-red-500 text-[10px] font-bold uppercase tracking-wider">Löschen</button>
+                    <div class="flex justify-end gap-4 mt-3 pt-3 border-t border-[#222]">
+                        <button onclick="shareAsImage(${c.id})" class="text-blue-500 text-[9px] font-bold uppercase tracking-widest">Teilen</button>
+                        <button onclick="deleteCoupon(${c.id})" class="text-red-500 text-[9px] font-bold uppercase tracking-widest">Löschen</button>
                     </div>
                 `;
                 list.appendChild(div);
             });
         }
 
-        // --- SCANNING ENGINE (OPTIMIZED) ---
+        // --- OPTIMIZED SCANNING ---
         function processImage(input) {
             if (input.files.length === 0) return;
             const file = input.files[0];
@@ -367,7 +344,7 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // Resize to max 800px width (Speed Boost!)
+                    // Resize to 800px width for speed
                     const maxWidth = 800;
                     const scale = maxWidth / img.width;
                     const canvas = document.getElementById('preprocess-canvas');
@@ -377,30 +354,26 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     
-                    // High Contrast Filter
+                    // Simple binarization
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imgData.data;
                     for (let i = 0; i < data.length; i += 4) {
                         const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                        const c = avg < 100 ? 0 : 255; // Aggressive binarization
+                        const c = avg < 110 ? 0 : 255;
                         data[i] = c; data[i + 1] = c; data[i + 2] = c;
                     }
                     ctx.putImageData(imgData, 0, 0);
                     
                     canvas.toBlob((blob) => {
-                        // Whitelist numbers only (Accuracy Boost!)
-                        Tesseract.recognize(blob, 'eng', {
-                            tessedit_char_whitelist: '0123456789' 
-                        }).then(({ data: { text } }) => {
-                            // Find longest number sequence
+                        // Whitelist for speed (only numbers)
+                        Tesseract.recognize(blob, 'eng', { tessedit_char_whitelist: '0123456789' })
+                        .then(({ data: { text } }) => {
                             const nums = text.match(/\d{7,18}/g);
                             if(nums && nums.length > 0) {
-                                // Sort by length desc
-                                const best = nums.sort((a,b) => b.length - a.length)[0];
-                                document.getElementById('code-input').value = best;
-                                alert("Nummer erkannt: " + best);
+                                document.getElementById('code-input').value = nums.sort((a,b) => b.length - a.length)[0];
+                                alert("Code erkannt!");
                             } else {
-                                alert("Keine eindeutige Nummer gefunden.");
+                                alert("Keine Nummer erkannt.");
                             }
                             loader.classList.add('hidden'); loader.classList.remove('flex');
                         });
@@ -411,20 +384,20 @@
             reader.readAsDataURL(file);
         }
 
-        // --- OTHER FUNCS ---
+        // --- UTILS ---
         function deleteCoupon(id) {
             if(confirm('Löschen?')) {
                 coupons = coupons.filter(c => c.id !== id);
                 saveToStorage();
                 renderList(currentFolder);
-                if(coupons.filter(c => c.retailer === currentFolder).length === 0) closeFolder();
+                if(!coupons.some(c => c.retailer === currentFolder)) closeFolder();
             }
         }
-        function saveToStorage() { localStorage.setItem('smart_wallet_v2', JSON.stringify(coupons)); }
+        function saveToStorage() { localStorage.setItem('smart_wallet_pure', JSON.stringify(coupons)); }
         
         function exportData() {
             const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(coupons));
-            const dl = document.createElement('a'); dl.href = str; dl.download = "wallet_backup.json";
+            const dl = document.createElement('a'); dl.href = str; dl.download = "backup.json";
             document.body.appendChild(dl); dl.click(); dl.remove();
         }
         function importData(inp) {
@@ -436,16 +409,16 @@
         async function shareAsImage(id) {
             const c = coupons.find(i => i.id === id);
             const container = document.getElementById('share-container');
-            const accent = getBrandColorHex(c.retailer);
+            const color = getBrandColor(c.retailer);
             
             container.innerHTML = `
-                <div style="background:white; padding:40px; border-radius:30px; text-align:center; border: 8px solid ${accent}">
+                <div style="background:white; padding:40px; border-radius:30px; text-align:center; border: 8px solid ${color}">
                     <h1 style="font-size:50px; margin:0; font-weight:900; color:black; text-transform:uppercase">${c.retailer}</h1>
-                    ${c.multi ? `<div style="background:${accent}; color:white; font-size:30px; display:inline-block; padding:10px 30px; border-radius:60px; margin:20px 0; font-weight:bold">${c.multi} FACH</div>` : ''}
+                    ${c.multi ? `<div style="background:${color}; color:white; font-size:30px; display:inline-block; padding:10px 30px; border-radius:60px; margin:20px 0; font-weight:bold">${c.multi} FACH</div>` : ''}
                     ${c.comment ? `<p style="font-size:24px; color:#555; margin:10px 0; font-style:italic">"${c.comment}"</p>` : ''}
                     <div style="margin:30px 0"><svg id="share-barcode-${id}"></svg></div>
                     <div style="font-family:monospace; font-size:40px; letter-spacing:8px; font-weight:bold; color:black">${c.code}</div>
-                    <p style="margin-top:30px; color:#333; font-size:18px">Gültig bis: ${formatDate(c.validUntil) || 'unbegrenzt'}</p>
+                    <p style="margin-top:30px; color:#333; font-size:18px">Bis: ${formatDate(c.validUntil) || 'unbegrenzt'}</p>
                 </div>`;
             JsBarcode(`#share-barcode-${id}`, c.code, { format: "CODE128", width: 4, height: 120, displayValue: false });
             
@@ -454,38 +427,33 @@
                 canvas.toBlob(async (blob) => {
                     const f = new File([blob], `coupon.jpg`, { type: "image/jpeg" });
                     if(navigator.share) await navigator.share({ files: [f] });
-                    else alert("Bild erstellt.");
                 });
             }, 300);
         }
 
-        // Helpers
         function openFocus(id) {
             const c = coupons.find(i => i.id === id);
             document.getElementById('focus-retailer').innerText = c.retailer;
             document.getElementById('focus-code').innerText = c.code;
             const badge = document.getElementById('focus-multi');
-            if(c.multi) { badge.style.display = 'inline-block'; badge.innerText = c.multi + " FACH"; } 
-            else { badge.style.display = 'none'; }
+            if(c.multi) { badge.style.display = 'inline-block'; badge.innerText = c.multi + " FACH"; } else { badge.style.display = 'none'; }
             document.getElementById('focus-comment').innerText = c.comment || "";
-            document.getElementById('focus-date').innerText = getValidityStatus(c.validUntil).text;
+            document.getElementById('focus-date').innerText = getValidity(c.validUntil).text;
             document.getElementById('focus-overlay').classList.remove('hidden');
             document.getElementById('focus-overlay').classList.add('flex');
             JsBarcode("#focus-barcode", c.code, { format: "CODE128", width: 4, height: 150, displayValue: false });
         }
-        function closeFocus() {
-             document.getElementById('focus-overlay').classList.add('hidden');
-             document.getElementById('focus-overlay').classList.remove('flex');
-        }
-        function getValidityStatus(d) {
+        function closeFocus() { document.getElementById('focus-overlay').classList.add('hidden'); document.getElementById('focus-overlay').classList.remove('flex'); }
+        
+        function getValidity(d) {
             if(!d) return { text: 'Dauerhaft', color: 'text-green-500' };
             const diff = Math.ceil((new Date(d) - new Date().setHours(0,0,0,0)) / 86400000);
             if(diff <= 0) return { text: 'Heute!', color: 'text-red-500' };
-            if(diff <= 3) return { text: `${diff} Tage`, color: 'text-yellow-400' };
-            return { text: `Bis ${formatDate(d)}`, color: 'text-gray-400' };
+            if(diff <= 3) return { text: `${diff} Tage`, color: 'text-yellow-500' };
+            return { text: formatDate(d), color: 'text-gray-500' };
         }
         function formatDate(s) { if(!s) return ""; const d = new Date(s); return `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`; }
-        function getBrandColorHex(n) { 
+        function getBrandColor(n) { 
             const x = n.toLowerCase();
             if(x.includes('netto')) return '#E2001A';
             if(x.includes('edeka')) return '#F7E017';
