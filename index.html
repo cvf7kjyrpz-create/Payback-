@@ -9,14 +9,14 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
-        /* --- DESIGN SYSTEM --- */
+        /* --- DESIGN SYSTEM (Apple Style) --- */
         :root {
             --bg-color: #f2f2f7;
             --card-bg: #ffffff;
             --text-color: #000000;
             --accent-color: #007aff;
             --header-height: 44px;
-            --tab-height: 80px; /* Inkl. Safe Area */
+            --tab-height: 80px; 
             --safe-area-top: env(safe-area-inset-top);
             --safe-area-bottom: env(safe-area-inset-bottom);
         }
@@ -35,8 +35,7 @@
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            /* WICHTIG: Kein Scrollen auf dem Body */
-            overflow: hidden; 
+            overflow: hidden; /* WICHTIG: Kein Scrollen auf dem Haupt-Screen */
             height: 100vh;
             width: 100vw;
         }
@@ -62,25 +61,25 @@
         }
         h1 { font-size: 17px; font-weight: 600; margin: 0; }
 
-        /* --- HAUPTBEREICH (Container) --- */
+        /* --- HAUPT-CONTAINER --- */
         #main-container {
             position: absolute;
             top: calc(var(--header-height) + var(--safe-area-top));
             bottom: var(--tab-height);
             width: 100%;
-            overflow: hidden; /* Standardmäßig kein Scrollen */
+            overflow: hidden; 
         }
 
-        /* --- LISTE (Darf scrollen) --- */
+        /* --- VIEW: LISTE (Scrollbar) --- */
         #view-list {
             height: 100%;
-            overflow-y: auto; /* Liste muss scrollbar sein */
+            overflow-y: auto;
             padding: 15px;
             box-sizing: border-box;
             -webkit-overflow-scrolling: touch;
         }
 
-        /* --- EINGABE (NICHT scrollbar, kompakt) --- */
+        /* --- VIEW: NEU (Fixiert, kompakt) --- */
         #view-new {
             height: 100%;
             display: none;
@@ -95,6 +94,7 @@
         .scan-actions {
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
         }
         .action-btn {
             flex: 1;
@@ -120,18 +120,18 @@
             display: none;
             margin-bottom: 10px;
             border: 2px solid var(--accent-color);
-            flex-shrink: 0; /* Darf nicht kleiner werden */
+            flex-shrink: 0; 
         }
 
-        /* --- FORMULAR (Kompakt) --- */
+        /* --- EINGABE FORMULAR --- */
         .form-card {
             background-color: var(--card-bg);
             border-radius: 12px;
             padding: 0 16px;
-            flex-grow: 1; /* Füllt den Restplatz */
+            flex-grow: 1; 
             display: flex;
             flex-direction: column;
-            justify-content: space-evenly; /* Verteilt Felder gleichmäßig */
+            justify-content: space-evenly; /* Verteilt Platz gleichmäßig */
         }
 
         .input-row {
@@ -141,6 +141,19 @@
             flex-direction: column;
         }
         .input-row:last-child { border-bottom: none; }
+        
+        /* ZWEISPALTIGE REIHE FÜR DATUM */
+        .date-row {
+            display: flex;
+            gap: 15px;
+            padding: 10px 0;
+            border-bottom: 0.5px solid rgba(128,128,128,0.2);
+        }
+        .date-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
         
         .label {
             font-size: 11px;
@@ -160,7 +173,7 @@
             padding: 0;
         }
 
-        /* Händler Chips (Horizontal scrollbar innerhalb der Box) */
+        /* Händler Chips */
         .chip-scroll {
             display: flex;
             gap: 8px;
@@ -182,7 +195,7 @@
             color: var(--bg-color);
         }
 
-        /* Speichern Button (Unten fixiert) */
+        /* Speichern Button */
         .save-btn {
             background-color: var(--accent-color);
             color: white;
@@ -192,7 +205,7 @@
             font-size: 16px;
             font-weight: 700;
             border: none;
-            margin-top: auto; /* Drückt Button nach unten */
+            margin-top: auto; 
             flex-shrink: 0;
         }
 
@@ -229,7 +242,7 @@
         }
         .tab-btn.active { color: var(--accent-color); }
 
-        /* --- COUPON ITEM (Liste) --- */
+        /* --- LISTE ITEMS --- */
         .coupon-item {
             background-color: var(--card-bg);
             border-radius: 14px;
@@ -247,11 +260,8 @@
         .barcode-area { background: white; padding: 10px; display: flex; justify-content: center; }
         .barcode-svg { width: 100%; height: 60px; max-width: 280px; }
         .coupon-footer { padding: 10px 15px; font-size: 12px; color: #8e8e93; display: flex; justify-content: space-between; }
-        .delete-text { color: #ff3b30; }
-
-        /* Verstecktes Input für Datei-Upload */
+        
         #file-input { display: none; }
-
     </style>
 </head>
 <body>
@@ -264,7 +274,7 @@
         
         <div id="view-list">
             <div id="coupon-list"></div>
-            <div id="empty-state" style="text-align:center; margin-top:50px; color:#8e8e93;">Keine Coupons.</div>
+            <div id="empty-state" style="text-align:center; margin-top:50px; color:#8e8e93;">Keine Coupons gespeichert.</div>
         </div>
 
         <div id="view-new">
@@ -284,7 +294,7 @@
             <div class="form-card">
                 <div class="input-row">
                     <div class="label">EAN Code</div>
-                    <input type="number" id="eanInput" placeholder="Scannen oder Tippen" style="font-weight: 700;">
+                    <input type="number" id="eanInput" placeholder="Code scannen oder tippen" style="font-weight: 700;">
                 </div>
 
                 <div class="input-row" style="padding-bottom:5px;">
@@ -307,9 +317,15 @@
                     </div>
                 </div>
 
-                <div class="input-row">
-                    <div class="label">Gültig bis</div>
-                    <input type="date" id="dateInput">
+                <div class="date-row">
+                    <div class="date-col">
+                        <div class="label">Gültig von</div>
+                        <input type="date" id="dateFrom">
+                    </div>
+                    <div class="date-col" style="border-left: 0.5px solid rgba(128,128,128,0.2); padding-left: 15px;">
+                        <div class="label">Gültig bis</div>
+                        <input type="date" id="dateTo">
+                    </div>
                 </div>
                 
                 <div class="input-row" style="border:none;">
@@ -335,28 +351,26 @@
     </div>
 
     <script>
-        let coupons = JSON.parse(localStorage.getItem('wallet_v3')) || [];
+        // --- LOGIK ---
+        let coupons = JSON.parse(localStorage.getItem('wallet_v4')) || [];
         let html5QrCode = null;
         let selectedStore = "";
 
-        // --- 1. KAMERA SCANNER ---
+        // Kamera starten
         function startCamera() {
             const readerDiv = document.getElementById('reader');
             readerDiv.style.display = "block";
             
-            // Scanner Initialisieren
             html5QrCode = new Html5Qrcode("reader");
-            
             const config = { fps: 10, qrbox: { width: 250, height: 100 } };
             
             html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
-                // Erfolg
                 document.getElementById('eanInput').value = decodedText;
                 stopScanner();
-                // Kleines Feedback
-                alert("Code erkannt: " + decodedText);
+                // Kurzes Feedback (Vibration wenn möglich)
+                if(navigator.vibrate) navigator.vibrate(200);
             }).catch(err => {
-                alert("Kamera Fehler: " + err);
+                alert("Fehler: " + err);
             });
         }
 
@@ -369,25 +383,22 @@
             }
         }
 
-        // --- 2. BILD UPLOAD SCANNER ---
+        // Bild Upload Scan
         function scanFromFile(input) {
             if (input.files.length === 0) return;
             const file = input.files[0];
-
-            // Wir nutzen die gleiche Bibliothek, aber im "File Mode"
             const html5QrCode = new Html5Qrcode("reader");
             
             html5QrCode.scanFile(file, true)
             .then(decodedText => {
                 document.getElementById('eanInput').value = decodedText;
-                alert("Aus Bild gescannt: " + decodedText);
             })
             .catch(err => {
-                alert("Kein Barcode auf diesem Bild gefunden.");
+                alert("Kein Barcode gefunden.");
             });
         }
 
-        // --- UI LOGIK ---
+        // UI Helper
         function selectStore(el, name) {
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
@@ -395,47 +406,44 @@
         }
 
         function switchView(view) {
-            // Scanner sicherheitshalber stoppen beim Wechsel
             stopScanner();
-
-            // Tabs
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('btn-' + view).classList.add('active');
             
-            // Views
             document.getElementById('view-list').style.display = (view === 'list') ? 'block' : 'none';
             document.getElementById('view-new').classList.toggle('active', view === 'new');
-            
-            // Titel
             document.getElementById('header-title').innerText = (view === 'list') ? "Meine Coupons" : "Neuer Coupon";
             
             if(view === 'list') renderList();
         }
 
-        // --- SPEICHERN ---
+        // Speichern
         function saveCoupon() {
             const ean = document.getElementById('eanInput').value;
             const fach = document.getElementById('fachInput').value;
-            const date = document.getElementById('dateInput').value;
+            const dateFrom = document.getElementById('dateFrom').value; // NEU
+            const dateTo = document.getElementById('dateTo').value;     // NEU
             const note = document.getElementById('noteInput').value;
 
-            if(!ean) { alert("Bitte EAN Code eingeben."); return; }
+            if(!ean) { alert("Bitte EAN eingeben."); return; }
 
             coupons.push({
                 id: Date.now(),
                 ean, 
                 store: selectedStore || "Coupon", 
                 fach: fach || "1",
-                date, 
+                dateFrom, 
+                dateTo, 
                 note
             });
             
-            localStorage.setItem('wallet_v3', JSON.stringify(coupons));
+            localStorage.setItem('wallet_v4', JSON.stringify(coupons));
             
-            // Reset und Wechsel
+            // Reset
             document.getElementById('eanInput').value = "";
             document.getElementById('fachInput').value = "";
-            document.getElementById('dateInput').value = "";
+            document.getElementById('dateFrom').value = "";
+            document.getElementById('dateTo').value = "";
             document.getElementById('noteInput').value = "";
             selectedStore = "";
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
@@ -446,12 +454,12 @@
         function deleteCoupon(id) {
             if(confirm("Löschen?")) {
                 coupons = coupons.filter(c => c.id !== id);
-                localStorage.setItem('wallet_v3', JSON.stringify(coupons));
+                localStorage.setItem('wallet_v4', JSON.stringify(coupons));
                 renderList();
             }
         }
 
-        // --- RENDERN ---
+        // Liste anzeigen
         function renderList() {
             const list = document.getElementById('coupon-list');
             list.innerHTML = "";
@@ -463,18 +471,26 @@
                 document.getElementById('empty-state').style.display = "none";
             }
 
-            // Sortieren (Datum)
+            // Sortieren
             coupons.sort((a,b) => {
-                if(!a.date) return 1;
-                if(!b.date) return -1;
-                return new Date(a.date) - new Date(b.date);
+                if(!a.dateTo) return 1;
+                if(!b.dateTo) return -1;
+                return new Date(a.dateTo) - new Date(b.dateTo);
             });
 
             coupons.forEach(c => {
                 const el = document.createElement('div');
                 el.className = "coupon-item";
-                const dateStr = c.date ? new Date(c.date).toLocaleDateString('de-DE') : "Unbegrenzt";
                 
+                // Datumslogik für Anzeige
+                let dateStr = "Unbegrenzt";
+                const d1 = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : "";
+                const d2 = c.dateTo ? new Date(c.dateTo).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: '2-digit'}) : "";
+                
+                if(d1 && d2) dateStr = `${d1} - ${d2}`;
+                else if(d1) dateStr = `Ab ${d1}`;
+                else if(d2) dateStr = `Bis ${d2}`;
+
                 el.innerHTML = `
                     <div class="coupon-header">
                         <span style="font-weight:700">${c.store}</span>
@@ -484,13 +500,13 @@
                         <svg id="bc-${c.id}" class="barcode-svg"></svg>
                     </div>
                     <div class="coupon-footer">
-                        <div>Bis: ${dateStr} <span style="margin-left:5px; color:#000;">${c.note}</span></div>
-                        <div class="delete-text" onclick="deleteCoupon(${c.id})">Löschen</div>
+                        <div>${dateStr} <span style="margin-left:5px; color:#000;">${c.note}</span></div>
+                        <div style="color:#ff3b30; font-weight:600;" onclick="deleteCoupon(${c.id})">Löschen</div>
                     </div>
                 `;
                 list.appendChild(el);
 
-                // Barcode generieren
+                // Barcode
                 try {
                     JsBarcode("#bc-" + c.id, c.ean, {
                         format: "EAN13", lineColor: "#000", width: 2, height: 50, displayValue: true
@@ -503,7 +519,6 @@
             });
         }
 
-        // Start
         renderList();
     </script>
 </body>
