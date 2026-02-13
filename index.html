@@ -18,7 +18,7 @@
             --sub-text: #8e8e93;
             --accent-color: #ffffff;
             --danger-color: #ff453a;
-            --success-color: #30d158; /* Grün für "Benutzt" Status */
+            --success-color: #30d158;
             
             --header-height: 44px;
             --tab-height: 80px; 
@@ -274,7 +274,6 @@
             border-top: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* Action Buttons im Footer */
         .footer-actions {
             display: flex;
             gap: 15px;
@@ -290,9 +289,6 @@
         }
         .btn-delete { color: var(--danger-color); }
         .btn-toggle { color: var(--success-color); }
-        
-        /* Checkbox Icon Styling */
-        .check-icon { font-size: 14px; margin-right: 4px; }
 
         #file-input { display: none; }
     </style>
@@ -383,29 +379,27 @@
 
     <script>
         // --- LOGIK ---
-        // Lokaler Speicher Key 'wallet_v5' für die neue Version
-        let coupons = JSON.parse(localStorage.getItem('wallet_v5')) || [];
+        // Version 6 für neue Features
+        let coupons = JSON.parse(localStorage.getItem('wallet_v6')) || [];
         let html5QrCode = null;
         let selectedStore = "";
 
-        // --- AUTOMATISCHES LÖSCHEN (Beim Start) ---
+        // --- AUTOMATISCHES LÖSCHEN (abgelaufen) ---
         function cleanupExpiredCoupons() {
-            const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            const today = new Date().toISOString().split('T')[0];
             const initialCount = coupons.length;
             
-            // Behalte nur Coupons, die KEIN Ablaufdatum haben ODER deren Datum >= Heute ist
+            // Behalte nur Coupons, deren "Bis"-Datum >= Heute ist (oder gar keins haben)
             coupons = coupons.filter(c => {
-                if (!c.dateTo) return true; // Kein Datum = Unbegrenzt
+                if (!c.dateTo) return true;
                 return c.dateTo >= today;
             });
             
             if (coupons.length < initialCount) {
-                localStorage.setItem('wallet_v5', JSON.stringify(coupons));
-                console.log((initialCount - coupons.length) + " abgelaufene Coupons gelöscht.");
+                localStorage.setItem('wallet_v6', JSON.stringify(coupons));
+                console.log((initialCount - coupons.length) + " abgelaufene Coupons entfernt.");
             }
         }
-        
-        // Sofort ausführen
         cleanupExpiredCoupons();
 
 
@@ -468,7 +462,7 @@
             if(view === 'list') renderList();
         }
 
-        // --- SPEICHERN ---
+        // --- SPEICHERN MIT DUPLIKAT-CHECK ---
         function saveCoupon() {
             const ean = document.getElementById('eanInput').value;
             const fach = document.getElementById('fachInput').value;
@@ -478,6 +472,22 @@
 
             if(!ean) { alert("Bitte EAN eingeben."); return; }
 
+            // *** NEU: DUPLIKAT PRÜFUNG ***
+            // Prüfen ob EAN schon in der Liste existiert
+            const existing = coupons.find(c => c.ean === ean);
+            
+            if (existing) {
+                // Unterschiedliche Meldung je nach Status
+                if (existing.used) {
+                    alert("⚠️ ACHTUNG: Dieser Coupon (EAN " + ean + ") wurde bereits als BENUTZT markiert!");
+                } else {
+                    alert("⚠️ DUPLIKAT: Dieser Coupon ist bereits in deiner Liste gespeichert.");
+                }
+                // Abbruch - nicht speichern!
+                return;
+            }
+
+            // Wenn neu, dann speichern
             coupons.push({
                 id: Date.now(),
                 ean, 
@@ -486,10 +496,10 @@
                 dateFrom, 
                 dateTo, 
                 note,
-                used: false // Standardmäßig nicht benutzt
+                used: false
             });
             
-            localStorage.setItem('wallet_v5', JSON.stringify(coupons));
+            localStorage.setItem('wallet_v6', JSON.stringify(coupons));
             
             // Reset
             document.getElementById('eanInput').value = "";
@@ -506,29 +516,27 @@
         function deleteCoupon(id) {
             if(confirm("Löschen?")) {
                 coupons = coupons.filter(c => c.id !== id);
-                localStorage.setItem('wallet_v5', JSON.stringify(coupons));
+                localStorage.setItem('wallet_v6', JSON.stringify(coupons));
                 renderList();
             }
         }
 
-        // --- NEU: STATUS ÄNDERN (Benutzt/Unbenutzt) ---
         function toggleUsed(id) {
             const coupon = coupons.find(c => c.id === id);
             if (coupon) {
-                coupon.used = !coupon.used; // Status umkehren
-                localStorage.setItem('wallet_v5', JSON.stringify(coupons));
-                renderList(); // Liste neu zeichnen
+                coupon.used = !coupon.used; 
+                localStorage.setItem('wallet_v6', JSON.stringify(coupons));
+                renderList(); 
             }
         }
 
         // --- RENDER ---
         function renderList() {
+            cleanupExpiredCoupons(); // Immer aufräumen vor dem Anzeigen
+            
             const list = document.getElementById('coupon-list');
             list.innerHTML = "";
             
-            // Cleanup nochmal beim Anzeigen aufrufen, sicher ist sicher
-            cleanupExpiredCoupons();
-
             if(coupons.length === 0) {
                 document.getElementById('empty-state').style.display = "block";
                 return;
@@ -536,11 +544,9 @@
                 document.getElementById('empty-state').style.display = "none";
             }
 
-            // Sortieren
+            // Sortieren: Erst Unbenutzte, dann nach Datum
             coupons.sort((a,b) => {
-                // Erst die unbenutzten, dann die benutzten
                 if(a.used !== b.used) return a.used ? 1 : -1;
-                // Dann nach Datum
                 if(!a.dateTo) return 1;
                 if(!b.dateTo) return -1;
                 return new Date(a.dateTo) - new Date(b.dateTo);
@@ -548,7 +554,6 @@
 
             coupons.forEach(c => {
                 const el = document.createElement('div');
-                // Wenn 'used' true ist, füge CSS Klasse hinzu
                 el.className = `coupon-item ${c.used ? 'used' : ''}`;
                 
                 let dateStr = "Unbegrenzt";
@@ -558,7 +563,6 @@
                 else if(d1) dateStr = `Ab ${d1}`;
                 else if(d2) dateStr = `Bis ${d2}`;
 
-                // Status Text Button (Toggle)
                 const toggleText = c.used ? "↩ Wiederherstellen" : "✔ Als genutzt markieren";
 
                 el.innerHTML = `
@@ -571,7 +575,6 @@
                     </div>
                     <div class="coupon-footer">
                         <div>${dateStr} <span style="margin-left:5px; color:white;">${c.note}</span></div>
-                        
                         <div class="footer-actions">
                             <button class="btn-link btn-toggle" onclick="toggleUsed(${c.id})">${toggleText}</button>
                             <button class="btn-link btn-delete" onclick="deleteCoupon(${c.id})">Löschen</button>
