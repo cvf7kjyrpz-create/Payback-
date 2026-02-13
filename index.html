@@ -3,30 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Coupon Wallet</title>
+    <title>Coupon Wallet Dark</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
-        /* --- DESIGN SYSTEM --- */
+        /* --- DARK MODE FORCED DESIGN --- */
         :root {
-            --bg-color: #f2f2f7;
-            --card-bg: #ffffff;
-            --text-color: #000000;
-            --accent-color: #007aff;
+            /* Alles Schwarz/Dunkel */
+            --bg-color: #000000;
+            --card-bg: #1c1c1e; /* Leichtes Grau für Karten */
+            --input-bg: #2c2c2e; /* Felder etwas heller */
+            --text-color: #ffffff;
+            --sub-text: #8e8e93;
+            --accent-color: #ffffff; /* Weiße Akzente statt Blau */
+            --danger-color: #ff453a;
+            
             --header-height: 44px;
-            --tab-height: 80px;
+            --tab-height: 80px; 
             --safe-area-top: env(safe-area-inset-top);
             --safe-area-bottom: env(safe-area-inset-bottom);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #000000;
-                --card-bg: #1c1c1e;
-                --text-color: #ffffff;
-            }
         }
 
         body {
@@ -35,12 +32,12 @@
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            overflow: hidden; 
+            overflow: hidden; /* Kein Scrollen am Hauptbody */
             height: 100vh;
             width: 100vw;
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER (Schwarz) --- */
         header {
             position: absolute;
             top: 0;
@@ -48,29 +45,15 @@
             width: 100%;
             height: calc(var(--header-height) + var(--safe-area-top));
             padding-top: var(--safe-area-top);
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom: 0.5px solid rgba(128,128,128,0.3);
+            background: rgba(28, 28, 30, 0.95); /* Fast schwarz */
+            border-bottom: 0.5px solid rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 10;
+            box-sizing: border-box;
         }
-        @media (prefers-color-scheme: dark) {
-            header { background: rgba(30, 30, 30, 0.95); }
-        }
-
-        /* Header Titel & Zurück Button */
-        h1 { font-size: 17px; font-weight: 600; margin: 0; }
-        .back-btn {
-            position: absolute;
-            left: 15px;
-            bottom: 10px;
-            font-size: 16px;
-            color: var(--accent-color);
-            cursor: pointer;
-            display: none; /* Standardmäßig aus */
-            font-weight: 500;
-        }
+        h1 { font-size: 17px; font-weight: 600; margin: 0; color: white; }
 
         /* --- HAUPT-CONTAINER --- */
         #main-container {
@@ -78,48 +61,16 @@
             top: calc(var(--header-height) + var(--safe-area-top));
             bottom: var(--tab-height);
             width: 100%;
-            overflow: hidden;
+            overflow: hidden; 
         }
 
-        /* --- VIEW: ORDNER ÜBERSICHT --- */
-        #view-folders {
-            height: 100%;
-            overflow-y: auto;
-            padding: 20px;
-            box-sizing: border-box;
-            display: block; /* Startseite */
-        }
-
-        .folder-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 2 Spalten */
-            gap: 15px;
-        }
-
-        .folder-card {
-            background-color: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            aspect-ratio: 1.2; /* Quadratisch-ish */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            cursor: pointer;
-            position: relative;
-        }
-        .folder-icon { font-size: 32px; margin-bottom: 10px; }
-        .folder-name { font-weight: 600; font-size: 16px; }
-        .folder-count { font-size: 12px; color: #8e8e93; margin-top: 5px; }
-
-        /* --- VIEW: COUPON LISTE (Gefiltert) --- */
+        /* --- VIEW: LISTE --- */
         #view-list {
             height: 100%;
             overflow-y: auto;
             padding: 15px;
             box-sizing: border-box;
-            display: none; /* Erst unsichtbar */
+            -webkit-overflow-scrolling: touch;
         }
 
         /* --- VIEW: NEU --- */
@@ -133,112 +84,195 @@
         }
         #view-new.active { display: flex; }
 
-        /* --- ZOOM OVERLAY (Vollbild) --- */
-        #zoom-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            box-sizing: border-box;
-            backdrop-filter: blur(10px);
-        }
-
-        .zoom-card {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 350px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            animation: popUp 0.3s ease-out;
-        }
-
-        @keyframes popUp {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .zoom-store { font-size: 24px; font-weight: 800; color: #000; margin-bottom: 5px; }
-        .zoom-fach { font-size: 18px; color: #555; margin-bottom: 20px; }
-        .zoom-svg { width: 100%; height: 120px; }
-        .zoom-ean { font-family: monospace; font-size: 20px; letter-spacing: 2px; margin-top: 10px; color: #000; font-weight: 700;}
-        
-        .zoom-actions {
-            margin-top: 25px;
+        /* --- BUTTONS (Weiß auf Schwarz) --- */
+        .scan-actions {
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
         }
-        
-        .zoom-btn {
-            flex: 1;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            font-size: 15px;
-        }
-        .btn-close { background: #e5e5ea; color: #000; }
-        .btn-share { background: var(--accent-color); color: #fff; }
-
-        /* --- ELEMENTE DER EINGABEMASKE --- */
-        .scan-actions { display: flex; gap: 10px; flex-shrink: 0; }
         .action-btn {
-            flex: 1; background-color: var(--card-bg); color: var(--accent-color);
-            padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600;
-            border: none; display: flex; align-items: center; justify-content: center;
-            gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            flex: 1;
+            background-color: var(--card-bg);
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
+        /* --- KAMERA --- */
         #reader {
-            width: 100%; border-radius: 12px; overflow: hidden; display: none;
-            margin-bottom: 10px; border: 2px solid var(--accent-color); flex-shrink: 0;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            margin-bottom: 10px;
+            border: 2px solid white;
+            flex-shrink: 0; 
         }
 
+        /* --- FORMULAR KARTEN --- */
         .form-card {
-            background-color: var(--card-bg); border-radius: 12px; padding: 0 16px;
-            flex-grow: 1; display: flex; flex-direction: column; justify-content: space-evenly;
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            padding: 0 16px;
+            flex-grow: 1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            border: 1px solid rgba(255,255,255,0.05);
         }
-        .input-row { padding: 10px 0; border-bottom: 0.5px solid rgba(128,128,128,0.2); display: flex; flex-direction: column; }
-        .input-row:last-child { border-bottom: none; }
-        .date-row { display: flex; gap: 15px; padding: 10px 0; border-bottom: 0.5px solid rgba(128,128,128,0.2); }
-        .date-col { flex: 1; display: flex; flex-direction: column; }
-        .label { font-size: 11px; color: #8e8e93; text-transform: uppercase; margin-bottom: 4px; }
-        input { background: transparent; border: none; font-size: 16px; color: var(--text-color); width: 100%; outline: none; padding: 0; }
-        
-        .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-        .chip { background-color: var(--bg-color); padding: 6px 12px; border-radius: 14px; font-size: 13px; font-weight: 500; white-space: nowrap; border: 1px solid transparent; }
-        .chip.selected { background-color: var(--text-color); color: var(--bg-color); }
-        .save-btn { background-color: var(--accent-color); color: white; width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; border: none; margin-top: auto; flex-shrink: 0; }
 
-        /* --- COUPON ITEM (Liste) --- */
-        .coupon-item {
-            background-color: var(--card-bg); border-radius: 14px; margin-bottom: 15px;
-            overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;
+        .input-row {
+            padding: 12px 0;
+            border-bottom: 0.5px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
         }
-        .coupon-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; background: rgba(128,128,128,0.05); }
-        .barcode-area { background: white; padding: 10px; display: flex; justify-content: center; }
-        .barcode-svg { width: 100%; height: 60px; max-width: 280px; }
-        .coupon-footer { padding: 10px 15px; font-size: 12px; color: #8e8e93; display: flex; justify-content: space-between; }
+        .input-row:last-child { border-bottom: none; }
         
-        /* --- TAB BAR --- */
-        .tab-bar {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: var(--tab-height);
-            background: rgba(255, 255, 255, 0.95); border-top: 0.5px solid rgba(128,128,128,0.3);
-            display: flex; justify-content: space-around; align-items: flex-start;
-            padding-top: 10px; box-sizing: border-box; z-index: 10;
+        .date-row {
+            display: flex;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 0.5px solid rgba(255,255,255,0.1);
         }
-        .tab-btn { background: none; border: none; color: #999; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 50%; }
-        .tab-btn.active { color: var(--accent-color); }
+        .date-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .label {
+            font-size: 11px;
+            color: var(--sub-text);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        
+        input {
+            background: transparent;
+            border: none;
+            font-size: 17px;
+            color: white; /* Weißer Text */
+            width: 100%;
+            outline: none;
+            font-family: inherit;
+            padding: 0;
+        }
+        /* Datum Icon weiß machen */
+        input[type="date"] {
+            color-scheme: dark;
+        }
+
+        /* Händler Chips */
+        .chip-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+        .chip {
+            background-color: #2c2c2e; /* Dunkleres Grau */
+            padding: 8px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #d1d1d6;
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .chip.selected {
+            background-color: white;
+            color: black;
+            font-weight: 600;
+        }
+
+        /* Speichern Button */
+        .save-btn {
+            background-color: white; /* Weißer Button */
+            color: black; /* Schwarzer Text */
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            margin-top: auto; 
+            flex-shrink: 0;
+        }
+
+        /* --- TAB BAR (Schwarz) --- */
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--tab-height);
+            background: rgba(28, 28, 30, 0.95);
+            border-top: 0.5px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            padding-top: 10px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #636366;
+            font-size: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 50%;
+        }
+        .tab-btn.active { color: white; }
+
+        /* --- COUPON LISTE (Dark) --- */
+        .coupon-item {
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .coupon-header {
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* WICHTIG: Barcode muss Weiß sein für Scanner! */
+        .barcode-area { 
+            background: white; 
+            padding: 15px; 
+            display: flex; 
+            justify-content: center; 
+        }
+        .barcode-svg { width: 100%; height: 60px; max-width: 280px; }
+        
+        .coupon-footer { 
+            padding: 10px 15px; 
+            font-size: 12px; 
+            color: var(--sub-text); 
+            display: flex; 
+            justify-content: space-between; 
+            background-color: var(--card-bg);
+        }
 
         #file-input { display: none; }
     </style>
@@ -246,28 +280,27 @@
 <body>
 
     <header>
-        <div class="back-btn" id="back-btn" onclick="showFolders()">‹ Zurück</div>
-        <h1 id="header-title">Meine Wallet</h1>
+        <h1 id="header-title">Meine Coupons</h1>
     </header>
 
     <div id="main-container">
         
-        <div id="view-folders">
-            <div id="folder-grid" class="folder-grid">
-                </div>
-            <div id="empty-state" style="text-align:center; margin-top:50px; color:#8e8e93; display:none;">
-                Keine Coupons.<br>Klicke unten auf "Neu".
+        <div id="view-list">
+            <div id="coupon-list"></div>
+            <div id="empty-state" style="text-align:center; margin-top:50px; color:#636366;">
+                Noch keine Coupons.<br>Tippe auf "+" für neuen Eintrag.
             </div>
         </div>
 
-        <div id="view-list">
-            <div id="coupon-list"></div>
-        </div>
-
         <div id="view-new">
+            
             <div class="scan-actions">
-                <button class="action-btn" onclick="startCamera()"><span>📷</span> Kamera</button>
-                <button class="action-btn" onclick="document.getElementById('file-input').click()"><span>🖼️</span> Bild laden</button>
+                <button class="action-btn" onclick="startCamera()">
+                    <span>📷</span> Kamera
+                </button>
+                <button class="action-btn" onclick="document.getElementById('file-input').click()">
+                    <span>🖼️</span> Bild laden
+                </button>
                 <input type="file" id="file-input" accept="image/*" onchange="scanFromFile(this)">
             </div>
             
@@ -278,6 +311,7 @@
                     <div class="label">EAN Code</div>
                     <input type="number" id="eanInput" placeholder="Code scannen oder tippen" style="font-weight: 700;">
                 </div>
+
                 <div class="input-row" style="padding-bottom:5px;">
                     <div class="label">Händler</div>
                     <div class="chip-scroll">
@@ -288,9 +322,9 @@
                         <div class="chip" onclick="selectStore(this, 'Penny')">Penny</div>
                         <div class="chip" onclick="selectStore(this, 'Lidl')">Lidl</div>
                         <div class="chip" onclick="selectStore(this, 'Netto')">Netto</div>
-                        <div class="chip" onclick="selectStore(this, 'Aral')">Aral</div>
                     </div>
                 </div>
+
                 <div class="input-row">
                     <div class="label">Wert / Punkte</div>
                     <div style="display:flex; align-items:center;">
@@ -298,45 +332,35 @@
                         <span style="font-size: 16px; color: #8e8e93; font-weight:600;">Fach °P</span>
                     </div>
                 </div>
+
                 <div class="date-row">
                     <div class="date-col">
                         <div class="label">Gültig von</div>
                         <input type="date" id="dateFrom">
                     </div>
-                    <div class="date-col" style="border-left: 0.5px solid rgba(128,128,128,0.2); padding-left: 15px;">
+                    <div class="date-col" style="border-left: 0.5px solid rgba(255,255,255,0.1); padding-left: 15px;">
                         <div class="label">Gültig bis</div>
                         <input type="date" id="dateTo">
                     </div>
                 </div>
+                
                 <div class="input-row" style="border:none;">
                     <div class="label">Notiz</div>
                     <input type="text" id="noteInput" placeholder="Optional">
                 </div>
             </div>
+
             <button class="save-btn" onclick="saveCoupon()">Speichern</button>
         </div>
-    </div>
 
-    <div id="zoom-overlay" onclick="closeZoom(event)">
-        <div class="zoom-card" onclick="event.stopPropagation()"> <div id="zoom-store" class="zoom-store">STORE</div>
-            <div id="zoom-fach" class="zoom-fach">20 Fach</div>
-            
-            <svg id="zoom-barcode" class="zoom-svg"></svg>
-            <div id="zoom-ean" class="zoom-ean">1234567</div>
-            
-            <div class="zoom-actions">
-                <button class="zoom-btn btn-close" onclick="closeZoom()">Schließen</button>
-                <button class="zoom-btn btn-share" onclick="shareCurrentCoupon()">Teilen 📤</button>
-            </div>
-        </div>
     </div>
 
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchMainTab('folders')" id="btn-folders">
-            <div style="font-size:22px">📁</div>
+        <button class="tab-btn active" onclick="switchView('list')" id="btn-list">
+            <div style="font-size:22px">🎫</div>
             <div>Wallet</div>
         </button>
-        <button class="tab-btn" onclick="switchMainTab('new')" id="btn-new">
+        <button class="tab-btn" onclick="switchView('new')" id="btn-new">
             <div style="font-size:22px">➕</div>
             <div>Neu</div>
         </button>
@@ -344,201 +368,76 @@
 
     <script>
         // --- LOGIK ---
-        let coupons = JSON.parse(localStorage.getItem('wallet_v5')) || [];
+        let coupons = JSON.parse(localStorage.getItem('wallet_black')) || [];
         let html5QrCode = null;
         let selectedStore = "";
-        let currentZoomCoupon = null; // Für Sharing
 
-        // --- ORDNER & LISTE LOGIK ---
-        function renderFolders() {
-            const grid = document.getElementById('folder-grid');
-            grid.innerHTML = "";
-            
-            if(coupons.length === 0) {
-                document.getElementById('empty-state').style.display = 'block';
-                return;
-            } else {
-                document.getElementById('empty-state').style.display = 'none';
-            }
-
-            // 1. Eindeutige Shops finden
-            const shops = [...new Set(coupons.map(c => c.store || "Sonstige"))];
-            shops.sort();
-
-            shops.forEach(shop => {
-                // Anzahl zählen
-                const count = coupons.filter(c => (c.store || "Sonstige") === shop).length;
-
-                const card = document.createElement('div');
-                card.className = 'folder-card';
-                card.onclick = () => openFolder(shop);
-                
-                card.innerHTML = `
-                    <div class="folder-icon">📂</div>
-                    <div class="folder-name">${shop}</div>
-                    <div class="folder-count">${count} Coupons</div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function openFolder(shopName) {
-            document.getElementById('view-folders').style.display = 'none';
-            document.getElementById('view-list').style.display = 'block';
-            document.getElementById('header-title').innerText = shopName;
-            document.getElementById('back-btn').style.display = 'block'; // Zurück Button zeigen
-
-            // Liste filtern
-            const filteredCoupons = coupons.filter(c => (c.store || "Sonstige") === shopName);
-            renderList(filteredCoupons);
-        }
-
-        function showFolders() {
-            document.getElementById('view-list').style.display = 'none';
-            document.getElementById('view-folders').style.display = 'block';
-            document.getElementById('header-title').innerText = "Meine Wallet";
-            document.getElementById('back-btn').style.display = 'none';
-            renderFolders(); // Aktualisieren falls gelöscht wurde
-        }
-
-        function renderList(listData) {
-            const list = document.getElementById('coupon-list');
-            list.innerHTML = "";
-
-            // Sortieren nach Ablaufdatum
-            listData.sort((a,b) => {
-                if(!a.dateTo) return 1;
-                if(!b.dateTo) return -1;
-                return new Date(a.dateTo) - new Date(b.dateTo);
-            });
-
-            listData.forEach(c => {
-                const el = document.createElement('div');
-                el.className = "coupon-item";
-                // Klick auf Item öffnet Zoom
-                el.onclick = () => openZoom(c.id);
-
-                let dateStr = "Unbegrenzt";
-                const d1 = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : "";
-                const d2 = c.dateTo ? new Date(c.dateTo).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: '2-digit'}) : "";
-                if(d1 && d2) dateStr = `${d1} - ${d2}`;
-                else if(d2) dateStr = `Bis ${d2}`;
-
-                el.innerHTML = `
-                    <div class="coupon-header">
-                        <span style="font-weight:700">${c.store}</span>
-                        <span style="background:#000; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px;">${c.fach} Fach</span>
-                    </div>
-                    <div class="barcode-area">
-                        <svg id="bc-${c.id}" class="barcode-svg"></svg>
-                    </div>
-                    <div class="coupon-footer">
-                        <div>${dateStr} ${c.note ? '• ' + c.note : ''}</div>
-                        <div style="color:#ff3b30; font-weight:600;" onclick="deleteCoupon(event, ${c.id})">Löschen</div>
-                    </div>
-                `;
-                list.appendChild(el);
-
-                // Barcode generieren
-                setTimeout(() => generateBarcode("#bc-" + c.id, c.ean), 0);
-            });
-        }
-
-        // --- ZOOM & TEILEN ---
-        function openZoom(id) {
-            const c = coupons.find(x => x.id === id);
-            if(!c) return;
-            
-            currentZoomCoupon = c; // Speichern für Share Funktion
-
-            document.getElementById('zoom-store').innerText = c.store;
-            document.getElementById('zoom-fach').innerText = c.fach + " Fach °P";
-            document.getElementById('zoom-ean').innerText = c.ean;
-            
-            // Barcode groß generieren
-            generateBarcode("#zoom-barcode", c.ean);
-
-            document.getElementById('zoom-overlay').style.display = 'flex';
-        }
-
-        function closeZoom(e) {
-            document.getElementById('zoom-overlay').style.display = 'none';
-        }
-
-        function shareCurrentCoupon() {
-            if(!currentZoomCoupon) return;
-            
-            const textData = `Coupon für ${currentZoomCoupon.store}\nWert: ${currentZoomCoupon.fach} Fach\nCode: ${currentZoomCoupon.ean}\nGültig bis: ${currentZoomCoupon.dateTo || 'unbegrenzt'}`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Coupon ' + currentZoomCoupon.store,
-                    text: textData
-                }).catch(console.error);
-            } else {
-                // Fallback: In Zwischenablage kopieren
-                navigator.clipboard.writeText(textData);
-                alert("Daten kopiert:\n" + textData);
-            }
-        }
-
-        function generateBarcode(selector, ean) {
-            try {
-                JsBarcode(selector, ean, { format: "EAN13", lineColor: "#000", width: 3, height: 80, displayValue: false, margin: 0 });
-            } catch(e) {
-                JsBarcode(selector, ean, { format: "CODE128", lineColor: "#000", width: 3, height: 80, displayValue: false, margin: 0 });
-            }
-        }
-
-        // --- NAVIGATION TABS ---
-        function switchMainTab(tab) {
-            stopScanner();
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
-            if(tab === 'folders') {
-                document.getElementById('btn-folders').classList.add('active');
-                document.getElementById('view-new').classList.remove('active');
-                showFolders(); // Reset zur Ordneransicht
-            } else {
-                document.getElementById('btn-new').classList.add('active');
-                document.getElementById('view-folders').style.display = 'none';
-                document.getElementById('view-list').style.display = 'none';
-                document.getElementById('view-new').classList.add('active');
-                document.getElementById('header-title').innerText = "Neuer Coupon";
-                document.getElementById('back-btn').style.display = 'none';
-            }
-        }
-
-        // --- SPEICHERN & INPUT ---
+        // Kamera starten
         function startCamera() {
-            document.getElementById('reader').style.display = "block";
+            const readerDiv = document.getElementById('reader');
+            readerDiv.style.display = "block";
+            
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } }, (decodedText) => {
+            const config = { fps: 10, qrbox: { width: 250, height: 100 } };
+            
+            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
                 document.getElementById('eanInput').value = decodedText;
                 stopScanner();
                 if(navigator.vibrate) navigator.vibrate(200);
+            }).catch(err => {
+                alert("Fehler: " + err);
             });
         }
+
         function stopScanner() {
-            if (html5QrCode) { html5QrCode.stop().then(() => { document.getElementById('reader').style.display = "none"; html5QrCode.clear(); }); }
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('reader').style.display = "none";
+                    html5QrCode.clear();
+                });
+            }
         }
+
+        // Bild Upload Scan
         function scanFromFile(input) {
             if (input.files.length === 0) return;
-            new Html5Qrcode("reader").scanFile(input.files[0], true)
-                .then(t => document.getElementById('eanInput').value = t)
-                .catch(() => alert("Kein Code gefunden."));
+            const file = input.files[0];
+            const html5QrCode = new Html5Qrcode("reader");
+            
+            html5QrCode.scanFile(file, true)
+            .then(decodedText => {
+                document.getElementById('eanInput').value = decodedText;
+            })
+            .catch(err => {
+                alert("Kein Barcode gefunden.");
+            });
         }
+
+        // UI Helper
         function selectStore(el, name) {
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             selectedStore = name;
         }
 
+        function switchView(view) {
+            stopScanner();
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + view).classList.add('active');
+            
+            document.getElementById('view-list').style.display = (view === 'list') ? 'block' : 'none';
+            document.getElementById('view-new').classList.toggle('active', view === 'new');
+            document.getElementById('header-title').innerText = (view === 'list') ? "Meine Coupons" : "Neuer Coupon";
+            
+            if(view === 'list') renderList();
+        }
+
+        // Speichern
         function saveCoupon() {
             const ean = document.getElementById('eanInput').value;
             const fach = document.getElementById('fachInput').value;
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
+            const dateFrom = document.getElementById('dateFrom').value; 
+            const dateTo = document.getElementById('dateTo').value;     
             const note = document.getElementById('noteInput').value;
 
             if(!ean) { alert("Bitte EAN eingeben."); return; }
@@ -546,14 +445,16 @@
             coupons.push({
                 id: Date.now(),
                 ean, 
-                store: selectedStore || "Sonstige", 
+                store: selectedStore || "Coupon", 
                 fach: fach || "1",
-                dateFrom, dateTo, note
+                dateFrom, 
+                dateTo, 
+                note
             });
             
-            localStorage.setItem('wallet_v5', JSON.stringify(coupons));
+            localStorage.setItem('wallet_black', JSON.stringify(coupons));
             
-            // Reset Input
+            // Reset
             document.getElementById('eanInput').value = "";
             document.getElementById('fachInput').value = "";
             document.getElementById('dateFrom').value = "";
@@ -562,22 +463,78 @@
             selectedStore = "";
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
             
-            switchMainTab('folders');
+            switchView('list');
         }
 
-        function deleteCoupon(e, id) {
-            e.stopPropagation(); // Verhindert dass sich der Zoom öffnet beim Löschen
+        function deleteCoupon(id) {
             if(confirm("Löschen?")) {
                 coupons = coupons.filter(c => c.id !== id);
-                localStorage.setItem('wallet_v5', JSON.stringify(coupons));
-                // Aktuellen Ordner neu laden
-                const currentTitle = document.getElementById('header-title').innerText;
-                openFolder(currentTitle);
+                localStorage.setItem('wallet_black', JSON.stringify(coupons));
+                renderList();
             }
         }
 
-        // Init
-        renderFolders();
+        // Liste anzeigen
+        function renderList() {
+            const list = document.getElementById('coupon-list');
+            list.innerHTML = "";
+            
+            if(coupons.length === 0) {
+                document.getElementById('empty-state').style.display = "block";
+                return;
+            } else {
+                document.getElementById('empty-state').style.display = "none";
+            }
+
+            // Sortieren
+            coupons.sort((a,b) => {
+                if(!a.dateTo) return 1;
+                if(!b.dateTo) return -1;
+                return new Date(a.dateTo) - new Date(b.dateTo);
+            });
+
+            coupons.forEach(c => {
+                const el = document.createElement('div');
+                el.className = "coupon-item";
+                
+                // Datumslogik
+                let dateStr = "Unbegrenzt";
+                const d1 = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : "";
+                const d2 = c.dateTo ? new Date(c.dateTo).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: '2-digit'}) : "";
+                
+                if(d1 && d2) dateStr = `${d1} - ${d2}`;
+                else if(d1) dateStr = `Ab ${d1}`;
+                else if(d2) dateStr = `Bis ${d2}`;
+
+                el.innerHTML = `
+                    <div class="coupon-header">
+                        <span style="font-weight:700; color: white;">${c.store}</span>
+                        <span style="background:white; color:black; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:700;">${c.fach} Fach</span>
+                    </div>
+                    <div class="barcode-area">
+                        <svg id="bc-${c.id}" class="barcode-svg"></svg>
+                    </div>
+                    <div class="coupon-footer">
+                        <div>${dateStr} <span style="margin-left:5px; color:white;">${c.note}</span></div>
+                        <div style="color:#ff453a; font-weight:600;" onclick="deleteCoupon(${c.id})">Löschen</div>
+                    </div>
+                `;
+                list.appendChild(el);
+
+                // Barcode generieren
+                try {
+                    JsBarcode("#bc-" + c.id, c.ean, {
+                        format: "EAN13", lineColor: "#000", width: 2, height: 50, displayValue: true
+                    });
+                } catch(e) {
+                    JsBarcode("#bc-" + c.id, c.ean, {
+                        format: "CODE128", lineColor: "#000", width: 2, height: 50, displayValue: true
+                    });
+                }
+            });
+        }
+
+        renderList();
     </script>
 </body>
 </html>
