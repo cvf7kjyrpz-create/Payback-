@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Coupon Wallet Ultimate</title>
+    <title>Wallet Clean</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -15,13 +15,10 @@
             --bg-color: #000000;
             --card-bg: #1c1c1e;
             --text-color: #ffffff;
-            --sub-text: #8e8e93;
-            --accent-color: #ffffff;
-            --danger-color: #ff453a;
-            --success-color: #30d158;
-            --link-color: #0a84ff;
+            --sub-text: #636366; /* Dunkleres Grau für dezente Elemente */
+            --icon-color: #8e8e93; /* Farbe für die Buttons unten */
             
-            --header-height: 50px; /* Etwas höher für bessere Bedienbarkeit */
+            --header-height: 50px;
             --tab-height: 80px; 
             --safe-area-top: env(safe-area-inset-top);
         }
@@ -31,70 +28,75 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0; padding: 0; 
-            overflow: hidden; /* Verhindert Wackeln der ganzen App */
+            overflow: hidden; 
             height: 100vh; width: 100vw;
+            user-select: none; -webkit-user-select: none;
         }
 
-        /* --- HEADER (FIXIERT) --- */
+        /* --- HEADER --- */
         header {
-            position: fixed; /* Fixiert statt absolut */
-            top: 0; left: 0; width: 100%;
+            position: fixed; top: 0; left: 0; width: 100%;
             height: calc(var(--header-height) + var(--safe-area-top));
             padding-top: var(--safe-area-top);
-            background: rgba(28, 28, 30, 0.98); /* Fast undurchsichtig */
+            background: rgba(0, 0, 0, 0.9); /* Fast komplett schwarz */
             border-bottom: 0.5px solid rgba(255,255,255,0.1);
             display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; z-index: 100;
         }
         h1 { font-size: 17px; font-weight: 600; margin: 0; color: white; text-align: center; grid-column: 2; }
         
-        #back-btn { color: var(--link-color); padding-left: 15px; display: none; background: none; border: none; font-size: 16px; cursor: pointer; text-align: left;}
-        #share-all-btn { color: var(--link-color); padding-right: 15px; display: none; background: none; border: none; font-size: 22px; cursor: pointer; text-align: right;}
+        #back-btn { color: #0a84ff; padding-left: 15px; display: none; background: none; border: none; font-size: 16px; cursor: pointer; text-align: left;}
+        #share-all-btn { color: #0a84ff; padding-right: 15px; display: none; background: none; border: none; font-size: 22px; cursor: pointer; text-align: right;}
 
-        /* --- MAIN CONTAINER (SCROLLBAR) --- */
+        /* --- MAIN CONTAINER --- */
         #main-container {
             position: absolute; 
             top: calc(var(--header-height) + var(--safe-area-top));
             bottom: var(--tab-height); 
             width: 100%; 
-            overflow: hidden; /* Container scrollt nicht, nur die Views */
         }
 
         .view { height: 100%; width: 100%; display: none; box-sizing: border-box; }
         .view.active { display: block; }
         
-        /* Scrollbare Bereiche */
-        #view-dashboard { overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
-        #view-list { overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
+        /* Scrollbereich nur wenn nötig */
+        #view-dashboard { overflow-y: auto; padding: 20px; }
+        #view-list { overflow-y: auto; padding: 15px; }
         #view-edit { display: none; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
         #view-edit.active { display: flex; }
 
-        /* --- DASHBOARD LISTE (Länglich & Dezent) --- */
+        /* --- STORE LISTE (DASHBOARD) --- */
         .store-list-container {
             display: flex;
             flex-direction: column;
-            gap: 12px; /* Abstand zwischen den Buttons */
+            gap: 1px; /* Fast kein Abstand für Listen-Look */
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         .store-list-item {
             background-color: var(--card-bg);
-            border-radius: 12px;
             padding: 18px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid rgba(255,255,255,0.08);
             cursor: pointer;
-            transition: background 0.2s;
+            border-bottom: 0.5px solid rgba(255,255,255,0.05);
         }
+        .store-list-item:last-child { border-bottom: none; }
         .store-list-item:active { background-color: #2c2c2e; }
         
         .store-item-name { font-size: 17px; font-weight: 600; color: white; }
-        .store-item-count { font-size: 14px; color: var(--sub-text); background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 6px; }
+        .store-item-count { font-size: 15px; color: var(--sub-text); display:flex; align-items:center; gap:5px;}
+        /* Kleiner Pfeil nach rechts */
+        .store-item-count::after { content: '›'; font-size: 20px; color: #3a3a3c; margin-left: 5px; margin-top: -2px;}
 
         /* --- COUPON LIST ITEM --- */
         .coupon-item {
-            background-color: var(--card-bg); border-radius: 14px; margin-bottom: 20px;
-            overflow: hidden; border: 1px solid rgba(255,255,255,0.05); position: relative;
+            background-color: var(--card-bg); border-radius: 14px; margin-bottom: 25px;
+            overflow: hidden; 
+            /* Kein Rand, ganz clean */
+            position: relative;
         }
         .coupon-item.used .card-content { opacity: 0.3; filter: grayscale(1); }
         
@@ -116,28 +118,31 @@
             font-size: 13px; color: var(--sub-text); font-weight: 500;
         }
 
-        /* --- DEZENTE ACTION BAR (Icons) --- */
+        /* --- ULTRA DEZENTE ACTION BAR --- */
         .item-actions {
             display: flex;
-            justify-content: space-around; /* Gleichmäßig verteilt */
-            padding: 8px 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            background: rgba(255,255,255,0.02);
+            justify-content: space-between; /* Verteilt */
+            padding: 10px 20px;
+            background: transparent; /* Kein Hintergrund */
+            border-top: 0.5px solid rgba(255,255,255,0.05); /* Hauchdünne Linie */
         }
         .item-btn {
-            background: none; border: none; padding: 10px;
+            background: none; border: none; padding: 5px;
             font-size: 18px; cursor: pointer;
-            color: #555; /* Sehr dezent dunkelgrau */
+            color: #555; /* Sehr dunkelgrau, fast unsichtbar */
+            display: flex; align-items: center; justify-content: center;
             transition: color 0.2s;
         }
-        .item-btn:active { color: white; transform: scale(1.1); }
-        .item-btn.btn-toggle.active { color: var(--success-color); } 
+        /* Beim Tippen wird es kurz hell */
+        .item-btn:active { color: white; }
+        
+        /* Icons selbst etwas kleiner */
+        .btn-icon { font-size: 18px; filter: grayscale(100%); opacity: 0.5; }
 
-        /* --- FORMULAR (Eingabe) --- */
+        /* --- FORMULAR --- */
         .form-card {
             background-color: var(--card-bg); border-radius: 14px; padding: 0 16px; flex-grow: 0; 
             display: flex; flex-direction: column;
-            border: 1px solid rgba(255,255,255,0.05);
         }
         .input-row { padding: 14px 0; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;}
         .input-row:last-child { border-bottom: none; }
@@ -146,31 +151,29 @@
         input { background: transparent; border: none; font-size: 17px; color: white; width: 100%; outline: none; padding: 0; }
         input[type="date"] { color-scheme: dark; }
 
-        /* Chips Voreinstellungen */
         .chip-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .chip { 
             background-color: #2c2c2e; padding: 10px 18px; border-radius: 20px; 
             font-size: 14px; font-weight: 600; color: #d1d1d6; white-space: nowrap; 
-            border: 1px solid rgba(255,255,255,0.1); 
         }
-        .chip.selected { background-color: white; color: black; border-color: white; }
+        .chip.selected { background-color: white; color: black; }
 
         /* Typ Auswahl */
         .type-selector { display: flex; gap: 10px; margin-bottom: 5px; }
         .type-btn {
-            flex: 1; background: #2c2c2e; border: 1px solid rgba(255,255,255,0.1); color: #8e8e93;
+            flex: 1; background: #2c2c2e; border: none; color: #8e8e93;
             padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
         }
         .type-btn.active { background: white; color: black; }
 
         .save-btn { background-color: white; color: black; width: 100%; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; border: none; margin-top: 20px; flex-shrink: 0; margin-bottom: 20px;}
         .scan-actions { display: flex; gap: 10px; flex-shrink: 0; }
-        .action-btn { flex: 1; background-color: var(--card-bg); color: white; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .action-btn { flex: 1; background-color: var(--card-bg); color: white; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
         /* --- TAB BAR --- */
         .tab-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; height: var(--tab-height);
-            background: rgba(28, 28, 30, 0.98); border-top: 0.5px solid rgba(255,255,255,0.1);
+            background: rgba(0, 0, 0, 0.98); border-top: 0.5px solid rgba(255,255,255,0.1);
             display: flex; justify-content: space-around; align-items: flex-start;
             padding-top: 10px; box-sizing: border-box; z-index: 100;
         }
@@ -192,17 +195,17 @@
 </head>
 <body>
 
-    <div id="view-detail" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div id="view-detail" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.98); z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
         
-        <button onclick="document.getElementById('view-detail').style.display='none'" style="position:absolute; top:50px; right:20px; background:rgba(255,255,255,0.15); width:40px; height:40px; border-radius:50%; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+        <button onclick="document.getElementById('view-detail').style.display='none'" style="position:absolute; top:50px; right:20px; background:rgba(255,255,255,0.1); width:40px; height:40px; border-radius:50%; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
         
-        <div style="background:#1c1c1e; width:100%; max-width:90vw; border-radius:20px; padding:30px 20px; text-align:center; box-shadow: 0 0 50px rgba(0,0,0,0.5);">
+        <div style="background:#1c1c1e; width:100%; max-width:90vw; border-radius:20px; padding:30px 20px; text-align:center;">
             <h2 id="detail-store" style="margin:0; font-size:28px; color:white; margin-bottom: 15px;">STORE</h2>
             
             <div id="detail-badge" class="badge" style="display:inline-block; margin-bottom: 20px; font-size:18px; padding: 6px 16px;"></div>
             
             <div style="background: white; padding: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; display: flex; justify-content: center;">
-                <svg id="detail-barcode" style="width:100%; max-width: 100%; height:120px;"></svg>
+                <svg id="detail-barcode" style="width:100%; max-width: 100%; height:100px;"></svg>
             </div>
             
             <div id="detail-ean" style="color:#1c1c1e; background:white; margin-top:-10px; padding-bottom:10px; border-radius: 0 0 12px 12px; font-family:monospace; font-weight:bold; font-size: 18px; letter-spacing: 2px;">12345</div>
@@ -258,7 +261,7 @@
                     <div class="label">Art des Coupons</div>
                     <div class="type-selector">
                         <button class="type-btn active" onclick="setType('fach')" id="btn-type-fach">Fach</button>
-                        <button class="type-btn" onclick="setType('percent')" id="btn-type-percent">% Rabatt</button>
+                        <button class="type-btn" onclick="setType('percent')" id="btn-type-percent">%</button>
                         <button class="type-btn" onclick="setType('free')" id="btn-type-free">Gratis</button>
                     </div>
                     <div style="display:flex; align-items:center;">
@@ -296,7 +299,7 @@
 
     <script>
         // --- DATA ---
-        let coupons = JSON.parse(localStorage.getItem('wallet_v12')) || [];
+        let coupons = JSON.parse(localStorage.getItem('wallet_clean')) || [];
         let html5QrCode = null;
         let selectedStore = "";
         let currentFilterStore = "";
@@ -314,7 +317,7 @@
                 if (!c.dateTo) return true;
                 return c.dateTo >= today;
             });
-            if (coupons.length < initialCount) localStorage.setItem('wallet_v12', JSON.stringify(coupons));
+            if (coupons.length < initialCount) localStorage.setItem('wallet_clean', JSON.stringify(coupons));
         }
 
         // --- NAVIGATION ---
@@ -366,10 +369,10 @@
             else { unitLabel.innerText = "Gratis"; input.placeholder = "1"; }
         }
 
-        // --- MULTI IMAGE SHARE ---
+        // --- EXPORT IMAGES ---
         async function shareAllIndividualImages() {
             const list = coupons.filter(c => c.store === currentFilterStore && !c.used);
-            if(list.length === 0) { alert("Keine aktiven Coupons zum Teilen."); return; }
+            if(list.length === 0) { alert("Keine aktiven Coupons."); return; }
 
             const renderContainer = document.getElementById('render-container');
             const filesArray = [];
@@ -406,19 +409,18 @@
                     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                     const file = new File([blob], `${c.store}_${i+1}.png`, { type: "image/png" });
                     filesArray.push(file);
-                } catch(e) { console.error("Fehler bei Coupon " + i, e); }
+                } catch(e) { console.error(e); }
             }
 
             if (navigator.share && navigator.canShare && navigator.canShare({ files: filesArray })) {
                 try {
                     await navigator.share({
                         files: filesArray,
-                        title: `${currentFilterStore} Coupons`,
-                        text: `Hier sind ${filesArray.length} Coupons für ${currentFilterStore}`
+                        title: `${currentFilterStore} Coupons`
                     });
                 } catch (err) {}
             } else {
-                alert("Dein Browser unterstützt das Senden mehrerer Bilder nicht. Bitte einzeln teilen.");
+                alert("Browser unterstützt kein Multi-Share.");
             }
             renderContainer.innerHTML = ""; 
         }
@@ -459,7 +461,7 @@
                 canvas.toBlob(async (blob) => {
                     const file = new File([blob], "Coupon.png", { type: "image/png" });
                     if (navigator.share) await navigator.share({ files: [file] });
-                    else alert("Screenshot erstellt (Browser unterstützt Teilen nicht).");
+                    else alert("Screenshot erstellt.");
                 });
             } catch(e) {}
             renderContainer.innerHTML = "";
@@ -475,14 +477,14 @@
             const storeCounts = {};
             coupons.forEach(c => { storeCounts[c.store] = (storeCounts[c.store] || 0) + 1; });
             
-            // Layout: Längliche Buttons untereinander
+            // Buttons untereinander
             Object.keys(storeCounts).forEach(store => {
                 const item = document.createElement('div');
                 item.className = 'store-list-item';
                 item.onclick = () => openStoreList(store);
                 item.innerHTML = `
                     <div class="store-item-name">${store}</div>
-                    <div class="store-item-count">${storeCounts[store]} Coupons</div>
+                    <div class="store-item-count">${storeCounts[store]}</div>
                 `;
                 list.appendChild(item);
             });
@@ -498,7 +500,7 @@
                 const el = document.createElement('div');
                 el.className = `coupon-item ${c.used ? 'used' : ''}`;
                 
-                // Datum Anzeige Logik
+                // Datum
                 let dateStr = "";
                 const dFrom = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
                 const dTo = c.dateTo ? new Date(c.dateTo).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
@@ -507,13 +509,13 @@
                 else if (dTo) dateStr = `Bis ${dTo}`;
                 else if (dFrom) dateStr = `Ab ${dFrom}`;
 
-                // Badge Logic
+                // Badge
                 let badgeClass = "badge-fach";
                 let badgeText = c.val + " Fach";
                 if(c.type === 'percent') { badgeClass = "badge-percent"; badgeText = c.val + "%"; }
                 if(c.type === 'free') { badgeClass = "badge-free"; badgeText = "GRATIS"; }
 
-                // Icons Logic
+                // Icons
                 const toggleIcon = c.used ? "↩" : "✔";
 
                 el.innerHTML = `
@@ -563,27 +565,25 @@
             document.getElementById('detail-ean').innerText = c.ean;
             
             let info = c.note || "";
-            // Datum im Detail anzeigen
             if(c.dateFrom) info += "\nStart: " + new Date(c.dateFrom).toLocaleDateString('de-DE');
             if(c.dateTo) info += "\nEnde: " + new Date(c.dateTo).toLocaleDateString('de-DE');
             document.getElementById('detail-info').innerText = info;
 
             document.getElementById('view-detail').style.display = 'flex';
             
-            // Barcode generieren - Begrenzte Breite
-            try { JsBarcode("#detail-barcode", c.ean, { format: "EAN13", lineColor: "#000", width: 3, height: 120, displayValue: false, margin: 0 }); } 
-            catch(e) { JsBarcode("#detail-barcode", c.ean, { format: "CODE128", lineColor: "#000", width: 3, height: 120, displayValue: false, margin: 0 }); }
+            try { JsBarcode("#detail-barcode", c.ean, { format: "EAN13", lineColor: "#000", width: 3, height: 100, displayValue: false, margin: 0 }); } 
+            catch(e) { JsBarcode("#detail-barcode", c.ean, { format: "CODE128", lineColor: "#000", width: 3, height: 100, displayValue: false, margin: 0 }); }
         }
 
         // --- ACTIONS ---
         function toggleUsed(id, event) {
             if(event) event.stopPropagation();
             const c = coupons.find(x => x.id === id);
-            if(c) { c.used = !c.used; localStorage.setItem('wallet_v12', JSON.stringify(coupons)); renderList(); }
+            if(c) { c.used = !c.used; localStorage.setItem('wallet_clean', JSON.stringify(coupons)); renderList(); }
         }
         function deleteCoupon(id, event) {
             if(event) event.stopPropagation();
-            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v12', JSON.stringify(coupons)); renderList(); }
+            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_clean', JSON.stringify(coupons)); renderList(); }
         }
         function editCoupon(id, event) {
             if(event) event.stopPropagation();
@@ -621,7 +621,6 @@
             const dateTo = document.getElementById('dateTo').value;     
             const note = document.getElementById('noteInput').value;
 
-            // Store Logic: ALLES GROSSBUCHSTABEN
             let finalStore = customStore.trim() ? customStore.trim().toUpperCase() : selectedStore;
 
             if(!ean) { alert("Bitte EAN eingeben."); return; }
@@ -639,7 +638,7 @@
             } else {
                 coupons.push({ id: Date.now(), ean, store: finalStore, type: selectedType, val, dateFrom, dateTo, note, used: false });
             }
-            localStorage.setItem('wallet_v12', JSON.stringify(coupons));
+            localStorage.setItem('wallet_clean', JSON.stringify(coupons));
             goToDashboard();
         }
 
