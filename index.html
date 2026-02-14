@@ -3,39 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Wallet Clean V2</title>
+    <title>Wallet Clean Final</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
     <style>
-        /* --- GLOBAL RESET & VARS --- */
+        /* --- DESIGN VARS --- */
         :root {
             --bg-color: #000000;
             --card-bg: #1c1c1e;
             --text-color: #ffffff;
             --sub-text: #636366;
-            
             --header-height: 50px;
             --tab-height: 80px; 
             --safe-area-top: env(safe-area-inset-top);
         }
 
-        /* WICHTIG: Verhindert, dass Padding die Breite vergrößert -> Kein seitliches Scrollen */
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Helvetica, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0; padding: 0; 
-            /* WICHTIG: Kein seitliches Scrollen */
-            overflow: hidden; 
-            width: 100%; height: 100%;
+            background-color: var(--bg-color); color: var(--text-color);
+            margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%;
             user-select: none; -webkit-user-select: none;
         }
 
@@ -51,127 +42,105 @@
         h1 { font-size: 17px; font-weight: 600; margin: 0; color: white; text-align: center; grid-column: 2; }
         
         button { cursor: pointer; outline: none; }
-        
         #back-btn { color: #0a84ff; padding-left: 15px; display: none; background: none; border: none; font-size: 16px; text-align: left;}
         #share-all-btn { color: #0a84ff; padding-right: 15px; display: none; background: none; border: none; font-size: 22px; text-align: right;}
 
-        /* --- MAIN CONTAINER --- */
+        /* --- MAIN --- */
         #main-container {
             position: absolute; 
             top: calc(var(--header-height) + var(--safe-area-top));
             bottom: var(--tab-height); 
-            width: 100%; 
-            overflow-x: hidden; /* Sicherstellung */
+            width: 100%; overflow-x: hidden; 
         }
 
         .view { height: 100%; width: 100%; display: none; }
         .view.active { display: block; }
         
-        /* Scrollbare Bereiche */
         #view-dashboard, #view-list, #view-edit {
-            overflow-y: auto; 
-            overflow-x: hidden;
-            padding: 20px 15px; /* Etwas Rand, aber Box-Sizing regelt das */
-            width: 100%;
+            overflow-y: auto; overflow-x: hidden; padding: 20px 15px; width: 100%;
             -webkit-overflow-scrolling: touch;
         }
-        
         #view-edit { display: none; flex-direction: column; gap: 15px; }
         #view-edit.active { display: flex; }
 
-        /* --- STORE LISTE --- */
+        /* --- DASHBOARD LISTE --- */
         .store-list-container {
-            display: flex; flex-direction: column;
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            width: 100%;
+            display: flex; flex-direction: column; background-color: var(--card-bg);
+            border-radius: 12px; overflow: hidden; width: 100%;
         }
-
         .store-list-item {
-            background-color: var(--card-bg);
-            padding: 18px 20px;
+            background-color: var(--card-bg); padding: 18px 20px;
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 0.5px solid rgba(255,255,255,0.05);
         }
         .store-list-item:last-child { border-bottom: none; }
         .store-list-item:active { background-color: #2c2c2e; }
-        
         .store-item-name { font-size: 17px; font-weight: 600; color: white; }
         .store-item-count { font-size: 15px; color: var(--sub-text); display:flex; align-items:center; gap:5px;}
         .store-item-count::after { content: '›'; font-size: 20px; color: #3a3a3c; margin-left: 5px; margin-top: -2px;}
 
-        /* --- COUPON LIST ITEM --- */
-        .coupon-item {
-            background-color: var(--card-bg); border-radius: 14px; margin-bottom: 25px;
-            overflow: hidden; position: relative; width: 100%;
+        /* --- COUPON CARD STYLE (Zentrales Design) --- */
+        /* Diese Klasse wird für Liste, Detail-View UND Export verwendet */
+        .coupon-card-style {
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            overflow: hidden; 
+            position: relative; 
+            width: 100%;
+            padding: 15px;
         }
-        .coupon-item.used .card-content { opacity: 0.3; filter: grayscale(1); }
         
-        .card-content { padding: 15px; }
         .coupon-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         
-        /* Badges */
         .badge { padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
         .badge-fach { background: white; color: black; }
         .badge-percent { background: #ff9f0a; color: white; } 
         .badge-free { background: #ffd60a; color: black; } 
 
-        .mini-barcode { background: white; padding: 8px; border-radius: 6px; display: flex; justify-content: center; height: 55px; }
-        .mini-barcode svg { height: 100%; width: 100%; }
+        .mini-barcode { 
+            background: white; padding: 8px; border-radius: 6px; 
+            display: flex; justify-content: center; align-items: center;
+            height: 60px; /* Fixe Höhe für Konsistenz */
+            width: 100%;
+        }
+        .mini-barcode svg { height: 100%; width: 100%; max-width: 100%; }
         
         .coupon-meta { 
             display: flex; justify-content: space-between; margin-top: 12px; 
             font-size: 13px; color: var(--sub-text); font-weight: 500;
         }
 
-        /* --- ACTION BAR (GRAU & DEZENT) --- */
+        /* Wrapper für die Liste (inkl. Actions) */
+        .coupon-list-wrapper { margin-bottom: 25px; border-radius: 14px; background-color: var(--card-bg); }
+        .coupon-list-wrapper.used .coupon-card-style { opacity: 0.3; filter: grayscale(1); }
+
+        /* --- ACTION BAR --- */
         .item-actions {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 15px;
-            background: transparent;
-            border-top: 0.5px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; padding: 8px 15px;
+            background: transparent; border-top: 0.5px solid rgba(255,255,255,0.05);
         }
         .item-btn {
-            background: none; border: none; padding: 5px 10px;
-            font-size: 18px; 
+            background: none; border: none; padding: 5px 10px; font-size: 18px; 
             display: flex; align-items: center; justify-content: center;
-            
-            /* TRICK: Graustufen erzwingen, damit Emojis nicht bunt sind */
-            filter: grayscale(100%) opacity(0.4); 
-            transition: transform 0.1s;
+            filter: grayscale(100%) opacity(0.4); transition: transform 0.1s;
         }
-        /* Wenn man tippt, wird es kurz sichtbar/heller */
         .item-btn:active { filter: grayscale(100%) opacity(1) brightness(2); transform: scale(1.1); }
-        
-        /* Der Haken (Genutzt) soll etwas heller sein wenn aktiv, aber immer noch grau */
         .item-btn.btn-toggle.active { filter: grayscale(100%) opacity(0.8); } 
 
         /* --- FORMULAR --- */
-        .form-card {
-            background-color: var(--card-bg); border-radius: 14px; padding: 0 16px; flex-grow: 0; 
-            display: flex; flex-direction: column; width: 100%;
-        }
+        .form-card { background-color: var(--card-bg); border-radius: 14px; padding: 0 16px; flex-grow: 0; display: flex; flex-direction: column; width: 100%; }
         .input-row { padding: 14px 0; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;}
         .input-row:last-child { border-bottom: none; }
-        
         .label { font-size: 11px; color: var(--sub-text); text-transform: uppercase; letter-spacing: 0.5px; }
         input { background: transparent; border: none; font-size: 17px; color: white; width: 100%; outline: none; padding: 0; }
         input[type="date"] { color-scheme: dark; }
 
         .chip-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; width: 100%; }
-        .chip { 
-            background-color: #2c2c2e; padding: 10px 18px; border-radius: 20px; 
-            font-size: 14px; font-weight: 600; color: #d1d1d6; white-space: nowrap; flex-shrink: 0;
-        }
+        .chip { background-color: #2c2c2e; padding: 10px 18px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #d1d1d6; white-space: nowrap; flex-shrink: 0; }
         .chip.selected { background-color: white; color: black; }
 
         .type-selector { display: flex; gap: 10px; margin-bottom: 5px; }
-        .type-btn {
-            flex: 1; background: #2c2c2e; border: none; color: #8e8e93;
-            padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
-        }
+        .type-btn { flex: 1; background: #2c2c2e; border: none; color: #8e8e93; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
         .type-btn.active { background: white; color: black; }
 
         .save-btn { background-color: white; color: black; width: 100%; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; border: none; margin-top: 20px; flex-shrink: 0; margin-bottom: 40px;}
@@ -188,32 +157,26 @@
         .tab-btn { background: none; border: none; color: #636366; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 50%; }
         .tab-btn.active { color: white; }
 
-        /* --- RENDER CONTAINER --- */
-        #render-container { position: fixed; top: -9999px; left: -9999px; width: 400px; background-color: #000000; }
-        .export-card { background-color: #1c1c1e; padding: 30px; margin-bottom: 20px; border-radius: 20px; text-align: center; border: 2px solid #333; }
-        .export-store { font-size: 28px; color: white; font-weight: bold; margin-bottom: 15px;}
-        .export-badge { display: inline-block; font-size: 24px; padding: 8px 20px; border-radius: 10px; font-weight: bold; margin-bottom: 20px;}
-        .export-barcode-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 10px;}
-        .export-ean { font-family: monospace; font-size: 18px; color: white; letter-spacing: 2px; }
-        .export-note { margin-top: 15px; color: #aaa; font-size: 16px; }
+        /* --- DETAIL OVERLAY --- */
+        #view-detail {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.96); z-index: 2000; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px;
+        }
 
+        /* --- RENDER CONTAINER (Hidden) --- */
+        #render-container { position: fixed; top: -9999px; left: -9999px; width: 100vw; background-color: #000000; }
+        
         #reader { width: 100%; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 10px; border: 2px solid white; flex-shrink: 0; }
         #file-input { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="view-detail" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.98); z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div id="view-detail">
         <button onclick="document.getElementById('view-detail').style.display='none'" style="position:absolute; top:50px; right:20px; background:rgba(255,255,255,0.1); width:40px; height:40px; border-radius:50%; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
-        <div style="background:#1c1c1e; width:100%; max-width:90vw; border-radius:20px; padding:30px 20px; text-align:center;">
-            <h2 id="detail-store" style="margin:0; font-size:28px; color:white; margin-bottom: 15px;">STORE</h2>
-            <div id="detail-badge" class="badge" style="display:inline-block; margin-bottom: 20px; font-size:18px; padding: 6px 16px;"></div>
-            <div style="background: white; padding: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; display: flex; justify-content: center;">
-                <svg id="detail-barcode" style="width:100%; max-width: 100%; height:100px;"></svg>
-            </div>
-            <div id="detail-ean" style="color:#1c1c1e; background:white; margin-top:-10px; padding-bottom:10px; border-radius: 0 0 12px 12px; font-family:monospace; font-weight:bold; font-size: 18px; letter-spacing: 2px;">12345</div>
-            <div id="detail-info" style="color:#8e8e93; margin-top:20px; font-size: 15px; line-height: 1.4;"></div>
-        </div>
+        <div id="detail-content-wrapper" style="width:100%; max-width:400px;"></div>
     </div>
 
     <header>
@@ -256,7 +219,7 @@
                         <div class="chip" onclick="selectStore(this, 'EDEKA')">EDEKA</div>
                         <div class="chip" onclick="selectStore(this, 'NETTO')">NETTO</div>
                     </div>
-                    <input type="text" id="customStoreInput" placeholder="EIGENER NAME..." style="margin-top:12px; font-size:15px; border-bottom:1px solid #333; padding-bottom:5px; text-transform: uppercase;">
+                    <input type="text" id="customStoreInput" placeholder="EIGENER NAME (Z.B. REWE)..." style="margin-top:12px; font-size:15px; border-bottom:1px solid #333; padding-bottom:5px; text-transform: uppercase;">
                 </div>
 
                 <div class="input-row">
@@ -301,7 +264,7 @@
 
     <script>
         // --- DATA ---
-        let coupons = JSON.parse(localStorage.getItem('wallet_v13')) || [];
+        let coupons = JSON.parse(localStorage.getItem('wallet_v14')) || [];
         let html5QrCode = null;
         let selectedStore = "";
         let currentFilterStore = "";
@@ -319,7 +282,49 @@
                 if (!c.dateTo) return true;
                 return c.dateTo >= today;
             });
-            if (coupons.length < initialCount) localStorage.setItem('wallet_v13', JSON.stringify(coupons));
+            if (coupons.length < initialCount) localStorage.setItem('wallet_v14', JSON.stringify(coupons));
+        }
+
+        // --- TEMPLATE GENERATOR (Die Magie für einheitliches Design) ---
+        function getCouponHTML(c, idSuffix) {
+            let dateStr = "";
+            const dFrom = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
+            const dTo = c.dateTo ? new Date(c.dateTo).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
+            
+            if(dFrom && dTo) dateStr = `Von ${dFrom} bis ${dTo}`;
+            else if (dTo) dateStr = `Bis ${dTo}`;
+            else if (dFrom) dateStr = `Ab ${dFrom}`;
+
+            let badgeClass = "badge-fach";
+            let badgeText = c.val + " Fach";
+            if(c.type === 'percent') { badgeClass = "badge-percent"; badgeText = c.val + "%"; }
+            if(c.type === 'free') { badgeClass = "badge-free"; badgeText = "GRATIS"; }
+
+            return `
+                <div class="coupon-header">
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                    <span style="font-size:12px; color:#8e8e93;">${dateStr}</span>
+                </div>
+                <div class="mini-barcode">
+                    <svg id="bc-${c.id}-${idSuffix}"></svg>
+                </div>
+                <div class="coupon-meta">
+                    <span>${c.note || c.store}</span>
+                    <span style="font-size:10px;">${c.ean}</span>
+                </div>
+            `;
+        }
+
+        function renderBarcode(c, idSuffix) {
+            try { 
+                JsBarcode("#bc-" + c.id + "-" + idSuffix, c.ean, { 
+                    format: "EAN13", lineColor: "#000", width: 2, height: 60, displayValue: false, margin: 0 
+                }); 
+            } catch(e) { 
+                JsBarcode("#bc-" + c.id + "-" + idSuffix, c.ean, { 
+                    format: "CODE128", lineColor: "#000", width: 2, height: 60, displayValue: false, margin: 0 
+                }); 
+            }
         }
 
         // --- NAVIGATION ---
@@ -371,10 +376,11 @@
             else { unitLabel.innerText = "Gratis"; input.placeholder = "1"; }
         }
 
-        // --- EXPORT IMAGES ---
+        // --- EXPORT IMAGES (MULTI & SINGLE) ---
         async function shareAllIndividualImages() {
-            const list = coupons.filter(c => c.store === currentFilterStore && !c.used);
-            if(list.length === 0) { alert("Keine aktiven Coupons."); return; }
+            // AUCH BENUTZTE COUPONS SENDEN!
+            const list = coupons.filter(c => c.store === currentFilterStore);
+            if(list.length === 0) { alert("Keine Coupons."); return; }
 
             const renderContainer = document.getElementById('render-container');
             const filesArray = [];
@@ -383,26 +389,13 @@
                 const c = list[i];
                 renderContainer.innerHTML = ""; 
 
-                let badgeText = c.val + " Fach";
-                let badgeColor = "white"; let badgeTextColor = "black";
-                if(c.type === 'percent') { badgeText = c.val + "%"; badgeColor = "#ff9f0a"; badgeTextColor = "white"; }
-                if(c.type === 'free') { badgeText = "GRATIS"; badgeColor = "#ffd60a"; badgeTextColor = "black"; }
-
+                // Erstelle eine Karte im Container, die EXAKT wie in der Liste aussieht
                 const card = document.createElement('div');
-                card.className = 'export-card';
-                card.innerHTML = `
-                    <div class="export-store">${c.store}</div>
-                    <div class="export-badge" style="background:${badgeColor}; color:${badgeTextColor}">${badgeText}</div>
-                    <div class="export-barcode-box">
-                        <svg id="exp-bc-${i}" style="width:100%; height:80px;"></svg>
-                    </div>
-                    <div class="export-ean">${c.ean}</div>
-                    <div class="export-note">${c.note || ""}</div>
-                `;
+                card.className = 'coupon-card-style'; // Gleiche Klasse wie in der Liste
+                card.style.width = "350px"; // Feste Breite für Export
+                card.innerHTML = getCouponHTML(c, 'export');
                 renderContainer.appendChild(card);
-
-                try { JsBarcode("#exp-bc-" + i, c.ean, { format: "EAN13", width: 3, height: 80, displayValue: false, margin:0 }); }
-                catch(e) { JsBarcode("#exp-bc-" + i, c.ean, { format: "CODE128", width: 3, height: 80, displayValue: false, margin:0 }); }
+                renderBarcode(c, 'export');
 
                 await new Promise(r => setTimeout(r, 50));
 
@@ -422,7 +415,7 @@
                     });
                 } catch (err) {}
             } else {
-                alert("Browser unterstützt kein Multi-Share.");
+                alert("Browser unterstützt Multi-Share nicht.");
             }
             renderContainer.innerHTML = ""; 
         }
@@ -435,26 +428,12 @@
             const renderContainer = document.getElementById('render-container');
             renderContainer.innerHTML = "";
 
-            let badgeText = c.val + " Fach";
-            let badgeColor = "white"; let badgeTextColor = "black";
-            if(c.type === 'percent') { badgeText = c.val + "%"; badgeColor = "#ff9f0a"; badgeTextColor = "white"; }
-            if(c.type === 'free') { badgeText = "GRATIS"; badgeColor = "#ffd60a"; badgeTextColor = "black"; }
-
             const card = document.createElement('div');
-            card.className = 'export-card';
-            card.innerHTML = `
-                <div class="export-store">${c.store}</div>
-                <div class="export-badge" style="background:${badgeColor}; color:${badgeTextColor}">${badgeText}</div>
-                <div class="export-barcode-box">
-                    <svg id="single-exp-bc" style="width:100%; height:80px;"></svg>
-                </div>
-                <div class="export-ean">${c.ean}</div>
-                <div class="export-note">${c.note || ""}</div>
-            `;
+            card.className = 'coupon-card-style';
+            card.style.width = "350px";
+            card.innerHTML = getCouponHTML(c, 'export-single');
             renderContainer.appendChild(card);
-
-            try { JsBarcode("#single-exp-bc", c.ean, { format: "EAN13", width: 3, height: 80, displayValue: false, margin:0 }); }
-            catch(e) { JsBarcode("#single-exp-bc", c.ean, { format: "CODE128", width: 3, height: 80, displayValue: false, margin:0 }); }
+            renderBarcode(c, 'export-single');
 
             await new Promise(r => setTimeout(r, 100));
 
@@ -498,37 +477,14 @@
             filtered.sort((a,b) => (a.used === b.used) ? 0 : a.used ? 1 : -1);
 
             filtered.forEach(c => {
-                const el = document.createElement('div');
-                el.className = `coupon-item ${c.used ? 'used' : ''}`;
+                const wrapper = document.createElement('div');
+                wrapper.className = `coupon-list-wrapper ${c.used ? 'used' : ''}`;
                 
-                let dateStr = "";
-                const dFrom = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
-                const dTo = c.dateTo ? new Date(c.dateTo).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
-                
-                if(dFrom && dTo) dateStr = `Von ${dFrom} bis ${dTo}`;
-                else if (dTo) dateStr = `Bis ${dTo}`;
-                else if (dFrom) dateStr = `Ab ${dFrom}`;
-
-                let badgeClass = "badge-fach";
-                let badgeText = c.val + " Fach";
-                if(c.type === 'percent') { badgeClass = "badge-percent"; badgeText = c.val + "%"; }
-                if(c.type === 'free') { badgeClass = "badge-free"; badgeText = "GRATIS"; }
-
                 const toggleIcon = c.used ? "↩" : "✔";
 
-                el.innerHTML = `
-                    <div class="card-content" id="card-content-${c.id}" onclick="openDetail(${c.id})">
-                        <div class="coupon-header">
-                            <span class="badge ${badgeClass}">${badgeText}</span>
-                            <span style="font-size:12px; color:#8e8e93;">${dateStr}</span>
-                        </div>
-                        <div class="mini-barcode">
-                            <svg id="bc-${c.id}"></svg>
-                        </div>
-                        <div class="coupon-meta">
-                            <span>${c.note}</span>
-                            <span style="font-size:10px;">${c.ean}</span>
-                        </div>
+                wrapper.innerHTML = `
+                    <div class="coupon-card-style card-content" onclick="openDetail(${c.id})">
+                        ${getCouponHTML(c, 'list')}
                     </div>
                     
                     <div class="item-actions">
@@ -538,50 +494,40 @@
                         <button class="item-btn" onclick="deleteCoupon(${c.id}, event)">🗑</button>
                     </div>
                 `;
-                list.appendChild(el);
-
-                try { JsBarcode("#bc-" + c.id, c.ean, { format: "EAN13", lineColor: "#000", width: 2, height: 50, displayValue: false, margin: 0 }); } 
-                catch(e) { JsBarcode("#bc-" + c.id, c.ean, { format: "CODE128", lineColor: "#000", width: 2, height: 50, displayValue: false, margin: 0 }); }
+                list.appendChild(wrapper);
+                renderBarcode(c, 'list');
             });
         }
 
-        // --- DETAILS ---
+        // --- DETAILS (FOKUS) ---
         function openDetail(id) {
             const c = coupons.find(x => x.id === id);
             if(!c) return;
-            document.getElementById('detail-store').innerText = c.store;
             
-            let badgeText = c.val + " Fach";
-            let badgeClass = "badge-fach";
-            if(c.type === 'percent') { badgeText = c.val + "%"; badgeClass = "badge-percent"; }
-            if(c.type === 'free') { badgeText = "GRATIS"; badgeClass = "badge-free"; }
+            const wrapper = document.getElementById('detail-content-wrapper');
+            wrapper.innerHTML = ""; // leeren
             
-            const badgeEl = document.getElementById('detail-badge');
-            badgeEl.className = "badge " + badgeClass;
-            badgeEl.innerText = badgeText;
-
-            document.getElementById('detail-ean').innerText = c.ean;
+            // Wir erstellen exakt die gleiche Karte wie in der Liste
+            const card = document.createElement('div');
+            card.className = 'coupon-card-style';
+            // Nur das HTML für den Inhalt, ohne Actions
+            card.innerHTML = getCouponHTML(c, 'detail');
             
-            let info = c.note || "";
-            if(c.dateFrom) info += "\nStart: " + new Date(c.dateFrom).toLocaleDateString('de-DE');
-            if(c.dateTo) info += "\nEnde: " + new Date(c.dateTo).toLocaleDateString('de-DE');
-            document.getElementById('detail-info').innerText = info;
+            wrapper.appendChild(card);
+            renderBarcode(c, 'detail');
 
             document.getElementById('view-detail').style.display = 'flex';
-            
-            try { JsBarcode("#detail-barcode", c.ean, { format: "EAN13", lineColor: "#000", width: 3, height: 100, displayValue: false, margin: 0 }); } 
-            catch(e) { JsBarcode("#detail-barcode", c.ean, { format: "CODE128", lineColor: "#000", width: 3, height: 100, displayValue: false, margin: 0 }); }
         }
 
         // --- ACTIONS ---
         function toggleUsed(id, event) {
             if(event) event.stopPropagation();
             const c = coupons.find(x => x.id === id);
-            if(c) { c.used = !c.used; localStorage.setItem('wallet_v13', JSON.stringify(coupons)); renderList(); }
+            if(c) { c.used = !c.used; localStorage.setItem('wallet_v14', JSON.stringify(coupons)); renderList(); }
         }
         function deleteCoupon(id, event) {
             if(event) event.stopPropagation();
-            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v13', JSON.stringify(coupons)); renderList(); }
+            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v14', JSON.stringify(coupons)); renderList(); }
         }
         function editCoupon(id, event) {
             if(event) event.stopPropagation();
@@ -636,7 +582,7 @@
             } else {
                 coupons.push({ id: Date.now(), ean, store: finalStore, type: selectedType, val, dateFrom, dateTo, note, used: false });
             }
-            localStorage.setItem('wallet_v13', JSON.stringify(coupons));
+            localStorage.setItem('wallet_v14', JSON.stringify(coupons));
             goToDashboard();
         }
 
