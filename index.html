@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Wallet Clean Final</title>
+    <title>Wallet Clean V3</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -79,8 +79,7 @@
         .store-item-count { font-size: 15px; color: var(--sub-text); display:flex; align-items:center; gap:5px;}
         .store-item-count::after { content: '›'; font-size: 20px; color: #3a3a3c; margin-left: 5px; margin-top: -2px;}
 
-        /* --- COUPON CARD STYLE (Zentrales Design) --- */
-        /* Diese Klasse wird für Liste, Detail-View UND Export verwendet */
+        /* --- COUPON CARD STYLE --- */
         .coupon-card-style {
             background-color: var(--card-bg);
             border-radius: 14px;
@@ -90,9 +89,9 @@
             padding: 15px;
         }
         
-        .coupon-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .coupon-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         
-        .badge { padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; display: inline-block; }
         .badge-fach { background: white; color: black; }
         .badge-percent { background: #ff9f0a; color: white; } 
         .badge-free { background: #ffd60a; color: black; } 
@@ -100,7 +99,7 @@
         .mini-barcode { 
             background: white; padding: 8px; border-radius: 6px; 
             display: flex; justify-content: center; align-items: center;
-            height: 60px; /* Fixe Höhe für Konsistenz */
+            height: 60px; 
             width: 100%;
         }
         .mini-barcode svg { height: 100%; width: 100%; max-width: 100%; }
@@ -264,7 +263,7 @@
 
     <script>
         // --- DATA ---
-        let coupons = JSON.parse(localStorage.getItem('wallet_v14')) || [];
+        let coupons = JSON.parse(localStorage.getItem('wallet_v15')) || [];
         let html5QrCode = null;
         let selectedStore = "";
         let currentFilterStore = "";
@@ -282,10 +281,10 @@
                 if (!c.dateTo) return true;
                 return c.dateTo >= today;
             });
-            if (coupons.length < initialCount) localStorage.setItem('wallet_v14', JSON.stringify(coupons));
+            if (coupons.length < initialCount) localStorage.setItem('wallet_v15', JSON.stringify(coupons));
         }
 
-        // --- TEMPLATE GENERATOR (Die Magie für einheitliches Design) ---
+        // --- TEMPLATE GENERATOR ---
         function getCouponHTML(c, idSuffix) {
             let dateStr = "";
             const dFrom = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
@@ -300,16 +299,20 @@
             if(c.type === 'percent') { badgeClass = "badge-percent"; badgeText = c.val + "%"; }
             if(c.type === 'free') { badgeClass = "badge-free"; badgeText = "GRATIS"; }
 
+            // NEU: Händlername fett oben links eingefügt
             return `
                 <div class="coupon-header">
-                    <span class="badge ${badgeClass}">${badgeText}</span>
-                    <span style="font-size:12px; color:#8e8e93;">${dateStr}</span>
+                    <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+                        <span style="font-weight:800; font-size:15px; color:white; letter-spacing:0.5px;">${c.store}</span>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <span style="font-size:12px; color:#8e8e93; align-self:flex-start;">${dateStr}</span>
                 </div>
                 <div class="mini-barcode">
                     <svg id="bc-${c.id}-${idSuffix}"></svg>
                 </div>
                 <div class="coupon-meta">
-                    <span>${c.note || c.store}</span>
+                    <span>${c.note || ""}</span>
                     <span style="font-size:10px;">${c.ean}</span>
                 </div>
             `;
@@ -378,7 +381,7 @@
 
         // --- EXPORT IMAGES (MULTI & SINGLE) ---
         async function shareAllIndividualImages() {
-            // AUCH BENUTZTE COUPONS SENDEN!
+            // Sende ALLE (auch benutzte), da der Empfänger sie vllt noch braucht
             const list = coupons.filter(c => c.store === currentFilterStore);
             if(list.length === 0) { alert("Keine Coupons."); return; }
 
@@ -523,11 +526,11 @@
         function toggleUsed(id, event) {
             if(event) event.stopPropagation();
             const c = coupons.find(x => x.id === id);
-            if(c) { c.used = !c.used; localStorage.setItem('wallet_v14', JSON.stringify(coupons)); renderList(); }
+            if(c) { c.used = !c.used; localStorage.setItem('wallet_v15', JSON.stringify(coupons)); renderList(); }
         }
         function deleteCoupon(id, event) {
             if(event) event.stopPropagation();
-            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v14', JSON.stringify(coupons)); renderList(); }
+            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v15', JSON.stringify(coupons)); renderList(); }
         }
         function editCoupon(id, event) {
             if(event) event.stopPropagation();
@@ -582,7 +585,7 @@
             } else {
                 coupons.push({ id: Date.now(), ean, store: finalStore, type: selectedType, val, dateFrom, dateTo, note, used: false });
             }
-            localStorage.setItem('wallet_v14', JSON.stringify(coupons));
+            localStorage.setItem('wallet_v15', JSON.stringify(coupons));
             goToDashboard();
         }
 
