@@ -21,7 +21,7 @@
             --success-color: #30d158;
             --link-color: #0a84ff;
             
-            --header-height: 44px;
+            --header-height: 50px; /* Etwas höher für bessere Bedienbarkeit */
             --tab-height: 80px; 
             --safe-area-top: env(safe-area-inset-top);
         }
@@ -30,71 +30,136 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Helvetica, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw;
+            margin: 0; padding: 0; 
+            overflow: hidden; /* Verhindert Wackeln der ganzen App */
+            height: 100vh; width: 100vw;
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER (FIXIERT) --- */
         header {
-            position: absolute; top: 0; left: 0; width: 100%;
+            position: fixed; /* Fixiert statt absolut */
+            top: 0; left: 0; width: 100%;
             height: calc(var(--header-height) + var(--safe-area-top));
             padding-top: var(--safe-area-top);
-            background: rgba(28, 28, 30, 0.95);
+            background: rgba(28, 28, 30, 0.98); /* Fast undurchsichtig */
             border-bottom: 0.5px solid rgba(255,255,255,0.1);
-            display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; z-index: 10;
+            display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; z-index: 100;
         }
         h1 { font-size: 17px; font-weight: 600; margin: 0; color: white; text-align: center; grid-column: 2; }
         
         #back-btn { color: var(--link-color); padding-left: 15px; display: none; background: none; border: none; font-size: 16px; cursor: pointer; text-align: left;}
         #share-all-btn { color: var(--link-color); padding-right: 15px; display: none; background: none; border: none; font-size: 22px; cursor: pointer; text-align: right;}
 
-        /* --- MAIN --- */
+        /* --- MAIN CONTAINER (SCROLLBAR) --- */
         #main-container {
-            position: absolute; top: calc(var(--header-height) + var(--safe-area-top));
-            bottom: var(--tab-height); width: 100%; overflow: hidden; 
+            position: absolute; 
+            top: calc(var(--header-height) + var(--safe-area-top));
+            bottom: var(--tab-height); 
+            width: 100%; 
+            overflow: hidden; /* Container scrollt nicht, nur die Views */
         }
 
         .view { height: 100%; width: 100%; display: none; box-sizing: border-box; }
         .view.active { display: block; }
         
-        #view-dashboard { overflow-y: auto; padding: 20px; }
-        #view-list { overflow-y: auto; padding: 15px; }
+        /* Scrollbare Bereiche */
+        #view-dashboard { overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
+        #view-list { overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
         #view-edit { display: none; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
         #view-edit.active { display: flex; }
 
-        /* --- STORE GRID --- */
-        .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .store-card {
-            background-color: var(--card-bg); border-radius: 16px; padding: 20px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; aspect-ratio: 1; border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer; transition: transform 0.1s;
+        /* --- DASHBOARD LISTE (Länglich & Dezent) --- */
+        .store-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Abstand zwischen den Buttons */
         }
-        .store-card:active { transform: scale(0.96); background-color: #2c2c2e; }
-        .store-name { font-size: 18px; font-weight: 700; margin-bottom: 5px; color: white; }
-        .store-count { font-size: 13px; color: var(--sub-text); }
 
-        /* --- FORMULAR --- */
+        .store-list-item {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .store-list-item:active { background-color: #2c2c2e; }
+        
+        .store-item-name { font-size: 17px; font-weight: 600; color: white; }
+        .store-item-count { font-size: 14px; color: var(--sub-text); background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 6px; }
+
+        /* --- COUPON LIST ITEM --- */
+        .coupon-item {
+            background-color: var(--card-bg); border-radius: 14px; margin-bottom: 20px;
+            overflow: hidden; border: 1px solid rgba(255,255,255,0.05); position: relative;
+        }
+        .coupon-item.used .card-content { opacity: 0.3; filter: grayscale(1); }
+        
+        .card-content { padding: 15px; cursor: pointer; }
+        
+        .coupon-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        
+        /* Badges */
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+        .badge-fach { background: white; color: black; }
+        .badge-percent { background: #ff9f0a; color: white; } 
+        .badge-free { background: #ffd60a; color: black; } 
+
+        .mini-barcode { background: white; padding: 8px; border-radius: 6px; display: flex; justify-content: center; height: 55px; }
+        .mini-barcode svg { height: 100%; width: 100%; }
+        
+        .coupon-meta { 
+            display: flex; justify-content: space-between; margin-top: 12px; 
+            font-size: 13px; color: var(--sub-text); font-weight: 500;
+        }
+
+        /* --- DEZENTE ACTION BAR (Icons) --- */
+        .item-actions {
+            display: flex;
+            justify-content: space-around; /* Gleichmäßig verteilt */
+            padding: 8px 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.02);
+        }
+        .item-btn {
+            background: none; border: none; padding: 10px;
+            font-size: 18px; cursor: pointer;
+            color: #555; /* Sehr dezent dunkelgrau */
+            transition: color 0.2s;
+        }
+        .item-btn:active { color: white; transform: scale(1.1); }
+        .item-btn.btn-toggle.active { color: var(--success-color); } 
+
+        /* --- FORMULAR (Eingabe) --- */
         .form-card {
             background-color: var(--card-bg); border-radius: 14px; padding: 0 16px; flex-grow: 0; 
             display: flex; flex-direction: column;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        .input-row { padding: 12px 0; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;}
+        .input-row { padding: 14px 0; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 8px;}
         .input-row:last-child { border-bottom: none; }
         
         .label { font-size: 11px; color: var(--sub-text); text-transform: uppercase; letter-spacing: 0.5px; }
         input { background: transparent; border: none; font-size: 17px; color: white; width: 100%; outline: none; padding: 0; }
         input[type="date"] { color-scheme: dark; }
 
-        .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-        .chip { background-color: #2c2c2e; padding: 8px 14px; border-radius: 14px; font-size: 13px; font-weight: 500; color: #d1d1d6; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); }
-        .chip.selected { background-color: white; color: black; font-weight: 600; }
+        /* Chips Voreinstellungen */
+        .chip-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .chip { 
+            background-color: #2c2c2e; padding: 10px 18px; border-radius: 20px; 
+            font-size: 14px; font-weight: 600; color: #d1d1d6; white-space: nowrap; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .chip.selected { background-color: white; color: black; border-color: white; }
 
         /* Typ Auswahl */
         .type-selector { display: flex; gap: 10px; margin-bottom: 5px; }
         .type-btn {
             flex: 1; background: #2c2c2e; border: 1px solid rgba(255,255,255,0.1); color: #8e8e93;
-            padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
         }
         .type-btn.active { background: white; color: black; }
 
@@ -102,69 +167,19 @@
         .scan-actions { display: flex; gap: 10px; flex-shrink: 0; }
         .action-btn { flex: 1; background-color: var(--card-bg); color: white; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* --- COUPON LIST ITEM --- */
-        .coupon-item {
-            background-color: var(--card-bg); border-radius: 14px; margin-bottom: 15px;
-            overflow: hidden; border: 1px solid rgba(255,255,255,0.05); position: relative;
-        }
-        .coupon-item.used .card-content { opacity: 0.3; filter: grayscale(1); }
-        
-        .card-content { padding: 15px; cursor: pointer; }
-        .coupon-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        
-        /* Badges */
-        .badge { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
-        .badge-fach { background: white; color: black; }
-        .badge-percent { background: #ff9f0a; color: white; } 
-        .badge-free { background: #ffd60a; color: black; } 
-
-        .mini-barcode { background: white; padding: 5px; border-radius: 4px; display: flex; justify-content: center; height: 50px; }
-        .mini-barcode svg { height: 100%; width: 100%; }
-        .coupon-meta { display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; color: var(--sub-text); }
-
-        /* --- DEZENTE ACTION BAR --- */
-        .item-actions {
-            display: flex;
-            background-color: transparent; 
-            padding: 5px 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .item-btn {
-            flex: 1; background: none; border: none; padding: 8px 0;
-            font-size: 16px; cursor: pointer;
-            color: #636366; 
-            display: flex; justify-content: center; align-items: center;
-            transition: color 0.2s;
-        }
-        .item-btn:active { color: white; }
-        .item-btn.btn-toggle.active { color: var(--success-color); } 
-
         /* --- TAB BAR --- */
         .tab-bar {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: var(--tab-height);
-            background: rgba(28, 28, 30, 0.95); border-top: 0.5px solid rgba(255,255,255,0.1);
+            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--tab-height);
+            background: rgba(28, 28, 30, 0.98); border-top: 0.5px solid rgba(255,255,255,0.1);
             display: flex; justify-content: space-around; align-items: flex-start;
-            padding-top: 10px; box-sizing: border-box; z-index: 10;
+            padding-top: 10px; box-sizing: border-box; z-index: 100;
         }
         .tab-btn { background: none; border: none; color: #636366; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 50%; }
         .tab-btn.active { color: white; }
 
-        /* --- RENDER CONTAINER FÜR EXPORT (Versteckt) --- */
-        #render-container {
-            position: fixed; top: -9999px; left: -9999px; width: 400px;
-            /* Wichtig: Schwarz für den Dark Mode Look beim Export */
-            background-color: #000000; 
-        }
-        
-        /* Das Design der exportierten Karte */
-        .export-card {
-            background-color: #1c1c1e;
-            padding: 30px;
-            margin-bottom: 20px;
-            border-radius: 20px;
-            text-align: center;
-            border: 2px solid #333;
-        }
+        /* --- RENDER CONTAINER --- */
+        #render-container { position: fixed; top: -9999px; left: -9999px; width: 400px; background-color: #000000; }
+        .export-card { background-color: #1c1c1e; padding: 30px; margin-bottom: 20px; border-radius: 20px; text-align: center; border: 2px solid #333; }
         .export-store { font-size: 28px; color: white; font-weight: bold; margin-bottom: 15px;}
         .export-badge { display: inline-block; font-size: 24px; padding: 8px 20px; border-radius: 10px; font-weight: bold; margin-bottom: 20px;}
         .export-barcode-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 10px;}
@@ -177,16 +192,22 @@
 </head>
 <body>
 
-    <div id="view-detail" style="position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
-        <button onclick="document.getElementById('view-detail').style.display='none'" style="position:absolute; top:40px; right:20px; background:rgba(255,255,255,0.2); width:32px; height:32px; border-radius:50%; border:none; color:white; font-size:20px;">&times;</button>
-        <div style="background:#1c1c1e; width:100%; max-width:350px; border-radius:20px; padding:20px; text-align:center;">
-            <h2 id="detail-store" style="margin:0; font-size:24px; color:white;">Store</h2>
-            <div id="detail-badge" class="badge badge-fach" style="display:inline-block; margin: 10px 0; font-size:16px; padding: 5px 12px;"></div>
-            <div style="background: white; padding: 20px; border-radius: 10px;">
-                <svg id="detail-barcode" style="width:100%; height:100px;"></svg>
+    <div id="view-detail" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+        
+        <button onclick="document.getElementById('view-detail').style.display='none'" style="position:absolute; top:50px; right:20px; background:rgba(255,255,255,0.15); width:40px; height:40px; border-radius:50%; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+        
+        <div style="background:#1c1c1e; width:100%; max-width:90vw; border-radius:20px; padding:30px 20px; text-align:center; box-shadow: 0 0 50px rgba(0,0,0,0.5);">
+            <h2 id="detail-store" style="margin:0; font-size:28px; color:white; margin-bottom: 15px;">STORE</h2>
+            
+            <div id="detail-badge" class="badge" style="display:inline-block; margin-bottom: 20px; font-size:18px; padding: 6px 16px;"></div>
+            
+            <div style="background: white; padding: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; display: flex; justify-content: center;">
+                <svg id="detail-barcode" style="width:100%; max-width: 100%; height:120px;"></svg>
             </div>
-            <div id="detail-ean" style="color:black; background:white; margin-top:-15px; padding-bottom:5px; border-radius: 0 0 10px 10px; font-family:monospace; font-weight:bold;">12345</div>
-            <div id="detail-info" style="color:#8e8e93; margin-top:15px;"></div>
+            
+            <div id="detail-ean" style="color:#1c1c1e; background:white; margin-top:-10px; padding-bottom:10px; border-radius: 0 0 12px 12px; font-family:monospace; font-weight:bold; font-size: 18px; letter-spacing: 2px;">12345</div>
+            
+            <div id="detail-info" style="color:#8e8e93; margin-top:20px; font-size: 15px; line-height: 1.4;"></div>
         </div>
     </div>
 
@@ -199,9 +220,9 @@
     <div id="main-container">
         
         <div id="view-dashboard" class="view active">
-            <div id="store-grid" class="store-grid"></div>
+            <div id="store-list-container" class="store-list-container"></div>
             <div id="empty-dashboard" style="text-align:center; margin-top:50px; color:#636366; display:none;">
-                Keine Coupons.<br>Tippe auf "Neu".
+                Keine Coupons.<br>Tippe unten auf "Neu".
             </div>
         </div>
 
@@ -226,14 +247,11 @@
                 <div class="input-row" style="padding-bottom:5px;">
                     <div class="label">Händler</div>
                     <div class="chip-scroll">
-                        <div class="chip" onclick="selectStore(this, 'dm')">dm</div>
-                        <div class="chip" onclick="selectStore(this, 'Edeka')">Edeka</div>
-                        <div class="chip" onclick="selectStore(this, 'Rewe')">Rewe</div>
-                        <div class="chip" onclick="selectStore(this, 'Rossmann')">Rossmann</div>
-                        <div class="chip" onclick="selectStore(this, 'Lidl')">Lidl</div>
-                        <div class="chip" onclick="selectStore(this, 'Netto')">Netto</div>
+                        <div class="chip" onclick="selectStore(this, 'DM')">DM</div>
+                        <div class="chip" onclick="selectStore(this, 'EDEKA')">EDEKA</div>
+                        <div class="chip" onclick="selectStore(this, 'NETTO')">NETTO</div>
                     </div>
-                    <input type="text" id="customStoreInput" placeholder="Oder eigener Name..." style="margin-top:8px; font-size:15px; border-bottom:1px solid #333; padding-bottom:5px;">
+                    <input type="text" id="customStoreInput" placeholder="EIGENER NAME (Z.B. REWE)..." style="margin-top:12px; font-size:15px; border-bottom:1px solid #333; padding-bottom:5px; text-transform: uppercase;">
                 </div>
 
                 <div class="input-row">
@@ -251,11 +269,11 @@
 
                 <div class="input-row" style="display:flex; flex-direction:row; gap:15px;">
                     <div style="flex:1">
-                        <div class="label">Von</div>
+                        <div class="label">Startdatum</div>
                         <input type="date" id="dateFrom">
                     </div>
                     <div style="flex:1">
-                        <div class="label">Bis</div>
+                        <div class="label">Enddatum</div>
                         <input type="date" id="dateTo">
                     </div>
                 </div>
@@ -278,7 +296,7 @@
 
     <script>
         // --- DATA ---
-        let coupons = JSON.parse(localStorage.getItem('wallet_v11')) || [];
+        let coupons = JSON.parse(localStorage.getItem('wallet_v12')) || [];
         let html5QrCode = null;
         let selectedStore = "";
         let currentFilterStore = "";
@@ -296,7 +314,7 @@
                 if (!c.dateTo) return true;
                 return c.dateTo >= today;
             });
-            if (coupons.length < initialCount) localStorage.setItem('wallet_v11', JSON.stringify(coupons));
+            if (coupons.length < initialCount) localStorage.setItem('wallet_v12', JSON.stringify(coupons));
         }
 
         // --- NAVIGATION ---
@@ -348,29 +366,23 @@
             else { unitLabel.innerText = "Gratis"; input.placeholder = "1"; }
         }
 
-        // --- MULTI IMAGE SHARE (Das Wichtige!) ---
+        // --- MULTI IMAGE SHARE ---
         async function shareAllIndividualImages() {
-            // Nur aktive Coupons des aktuellen Ladens
             const list = coupons.filter(c => c.store === currentFilterStore && !c.used);
             if(list.length === 0) { alert("Keine aktiven Coupons zum Teilen."); return; }
 
             const renderContainer = document.getElementById('render-container');
             const filesArray = [];
 
-            // Schleife durch alle Coupons
             for (let i = 0; i < list.length; i++) {
                 const c = list[i];
-                renderContainer.innerHTML = ""; // Container leeren
+                renderContainer.innerHTML = ""; 
 
-                // Badge Logik
                 let badgeText = c.val + " Fach";
-                let badgeColor = "white"; 
-                let badgeTextColor = "black";
-                
+                let badgeColor = "white"; let badgeTextColor = "black";
                 if(c.type === 'percent') { badgeText = c.val + "%"; badgeColor = "#ff9f0a"; badgeTextColor = "white"; }
                 if(c.type === 'free') { badgeText = "GRATIS"; badgeColor = "#ffd60a"; badgeTextColor = "black"; }
 
-                // HTML Card für diesen einen Coupon bauen
                 const card = document.createElement('div');
                 card.className = 'export-card';
                 card.innerHTML = `
@@ -384,25 +396,19 @@
                 `;
                 renderContainer.appendChild(card);
 
-                // Barcode generieren
                 try { JsBarcode("#exp-bc-" + i, c.ean, { format: "EAN13", width: 3, height: 80, displayValue: false, margin:0 }); }
                 catch(e) { JsBarcode("#exp-bc-" + i, c.ean, { format: "CODE128", width: 3, height: 80, displayValue: false, margin:0 }); }
 
-                // Warten auf Rendering
                 await new Promise(r => setTimeout(r, 50));
 
-                // Snapshot machen
                 try {
                     const canvas = await html2canvas(card, { backgroundColor: "#000000", scale: 2 });
                     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                     const file = new File([blob], `${c.store}_${i+1}.png`, { type: "image/png" });
                     filesArray.push(file);
-                } catch(e) {
-                    console.error("Fehler bei Coupon " + i, e);
-                }
+                } catch(e) { console.error("Fehler bei Coupon " + i, e); }
             }
 
-            // Alle Dateien auf einmal teilen
             if (navigator.share && navigator.canShare && navigator.canShare({ files: filesArray })) {
                 try {
                     await navigator.share({
@@ -410,21 +416,15 @@
                         title: `${currentFilterStore} Coupons`,
                         text: `Hier sind ${filesArray.length} Coupons für ${currentFilterStore}`
                     });
-                } catch (err) {
-                    // Abbruch durch User ist okay
-                }
+                } catch (err) {}
             } else {
-                alert("Dein Browser unterstützt das Senden mehrerer Bilder nicht gleichzeitig. Bitte nutze die 'Einzeln Teilen' Funktion.");
+                alert("Dein Browser unterstützt das Senden mehrerer Bilder nicht. Bitte einzeln teilen.");
             }
-            
-            // Container aufräumen
             renderContainer.innerHTML = ""; 
         }
 
-        // --- SINGLE SHARE ---
         async function shareSingle(id, event) {
             event.stopPropagation();
-            // Wir bauen auch für Einzel-Share die "schöne" Export-Karte, statt das List-Item zu fotografieren
             const c = coupons.find(x => x.id === id);
             if(!c) return;
 
@@ -465,21 +465,26 @@
             renderContainer.innerHTML = "";
         }
 
-        // --- RENDER LIST ---
+        // --- RENDERERS ---
         function renderDashboard() {
-            const grid = document.getElementById('store-grid');
-            grid.innerHTML = "";
+            const list = document.getElementById('store-list-container');
+            list.innerHTML = "";
             if (coupons.length === 0) { document.getElementById('empty-dashboard').style.display = 'block'; return; }
             else document.getElementById('empty-dashboard').style.display = 'none';
 
             const storeCounts = {};
             coupons.forEach(c => { storeCounts[c.store] = (storeCounts[c.store] || 0) + 1; });
+            
+            // Layout: Längliche Buttons untereinander
             Object.keys(storeCounts).forEach(store => {
-                const card = document.createElement('div');
-                card.className = 'store-card';
-                card.onclick = () => openStoreList(store);
-                card.innerHTML = `<div class="store-name">${store}</div><div class="store-count">${storeCounts[store]} Coupons</div>`;
-                grid.appendChild(card);
+                const item = document.createElement('div');
+                item.className = 'store-list-item';
+                item.onclick = () => openStoreList(store);
+                item.innerHTML = `
+                    <div class="store-item-name">${store}</div>
+                    <div class="store-item-count">${storeCounts[store]} Coupons</div>
+                `;
+                list.appendChild(item);
             });
         }
 
@@ -493,14 +498,23 @@
                 const el = document.createElement('div');
                 el.className = `coupon-item ${c.used ? 'used' : ''}`;
                 
+                // Datum Anzeige Logik
                 let dateStr = "";
-                if(c.dateTo) dateStr = `Bis ${new Date(c.dateTo).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'})}`;
+                const dFrom = c.dateFrom ? new Date(c.dateFrom).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
+                const dTo = c.dateTo ? new Date(c.dateTo).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}) : "";
+                
+                if(dFrom && dTo) dateStr = `Von ${dFrom} bis ${dTo}`;
+                else if (dTo) dateStr = `Bis ${dTo}`;
+                else if (dFrom) dateStr = `Ab ${dFrom}`;
 
                 // Badge Logic
                 let badgeClass = "badge-fach";
                 let badgeText = c.val + " Fach";
                 if(c.type === 'percent') { badgeClass = "badge-percent"; badgeText = c.val + "%"; }
                 if(c.type === 'free') { badgeClass = "badge-free"; badgeText = "GRATIS"; }
+
+                // Icons Logic
+                const toggleIcon = c.used ? "↩" : "✔";
 
                 el.innerHTML = `
                     <div class="card-content" id="card-content-${c.id}" onclick="openDetail(${c.id})">
@@ -518,7 +532,7 @@
                     </div>
                     
                     <div class="item-actions">
-                        <button class="item-btn btn-toggle ${c.used?'active':''}" onclick="toggleUsed(${c.id}, event)">${c.used ? '↩' : '✔'}</button>
+                        <button class="item-btn btn-toggle ${c.used?'active':''}" onclick="toggleUsed(${c.id}, event)">${toggleIcon}</button>
                         <button class="item-btn" onclick="shareSingle(${c.id}, event)">📤</button>
                         <button class="item-btn" onclick="editCoupon(${c.id}, event)">✏</button>
                         <button class="item-btn" onclick="deleteCoupon(${c.id}, event)">🗑</button>
@@ -547,22 +561,29 @@
             badgeEl.innerText = badgeText;
 
             document.getElementById('detail-ean').innerText = c.ean;
-            document.getElementById('detail-info').innerText = c.note || "";
+            
+            let info = c.note || "";
+            // Datum im Detail anzeigen
+            if(c.dateFrom) info += "\nStart: " + new Date(c.dateFrom).toLocaleDateString('de-DE');
+            if(c.dateTo) info += "\nEnde: " + new Date(c.dateTo).toLocaleDateString('de-DE');
+            document.getElementById('detail-info').innerText = info;
+
             document.getElementById('view-detail').style.display = 'flex';
             
-            try { JsBarcode("#detail-barcode", c.ean, { format: "EAN13", lineColor: "#000", width: 3, height: 100, displayValue: false, margin: 0 }); } 
-            catch(e) { JsBarcode("#detail-barcode", c.ean, { format: "CODE128", lineColor: "#000", width: 3, height: 100, displayValue: false, margin: 0 }); }
+            // Barcode generieren - Begrenzte Breite
+            try { JsBarcode("#detail-barcode", c.ean, { format: "EAN13", lineColor: "#000", width: 3, height: 120, displayValue: false, margin: 0 }); } 
+            catch(e) { JsBarcode("#detail-barcode", c.ean, { format: "CODE128", lineColor: "#000", width: 3, height: 120, displayValue: false, margin: 0 }); }
         }
 
         // --- ACTIONS ---
         function toggleUsed(id, event) {
             if(event) event.stopPropagation();
             const c = coupons.find(x => x.id === id);
-            if(c) { c.used = !c.used; localStorage.setItem('wallet_v11', JSON.stringify(coupons)); renderList(); }
+            if(c) { c.used = !c.used; localStorage.setItem('wallet_v12', JSON.stringify(coupons)); renderList(); }
         }
         function deleteCoupon(id, event) {
             if(event) event.stopPropagation();
-            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v11', JSON.stringify(coupons)); renderList(); }
+            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v12', JSON.stringify(coupons)); renderList(); }
         }
         function editCoupon(id, event) {
             if(event) event.stopPropagation();
@@ -600,7 +621,8 @@
             const dateTo = document.getElementById('dateTo').value;     
             const note = document.getElementById('noteInput').value;
 
-            let finalStore = customStore.trim() ? customStore.trim() : selectedStore;
+            // Store Logic: ALLES GROSSBUCHSTABEN
+            let finalStore = customStore.trim() ? customStore.trim().toUpperCase() : selectedStore;
 
             if(!ean) { alert("Bitte EAN eingeben."); return; }
             if(!finalStore) { alert("Bitte Händler wählen oder eingeben."); return; }
@@ -617,7 +639,7 @@
             } else {
                 coupons.push({ id: Date.now(), ean, store: finalStore, type: selectedType, val, dateFrom, dateTo, note, used: false });
             }
-            localStorage.setItem('wallet_v11', JSON.stringify(coupons));
+            localStorage.setItem('wallet_v12', JSON.stringify(coupons));
             goToDashboard();
         }
 
