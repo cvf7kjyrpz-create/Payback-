@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Wallet Clean V3</title>
+    <title>Wallet Stable</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -99,7 +99,7 @@
         .mini-barcode { 
             background: white; padding: 8px; border-radius: 6px; 
             display: flex; justify-content: center; align-items: center;
-            height: 60px; 
+            height: 70px; /* Etwas höher für bessere Sichtbarkeit */
             width: 100%;
         }
         .mini-barcode svg { height: 100%; width: 100%; max-width: 100%; }
@@ -109,7 +109,6 @@
             font-size: 13px; color: var(--sub-text); font-weight: 500;
         }
 
-        /* Wrapper für die Liste (inkl. Actions) */
         .coupon-list-wrapper { margin-bottom: 25px; border-radius: 14px; background-color: var(--card-bg); }
         .coupon-list-wrapper.used .coupon-card-style { opacity: 0.3; filter: grayscale(1); }
 
@@ -263,7 +262,10 @@
 
     <script>
         // --- DATA ---
-        let coupons = JSON.parse(localStorage.getItem('wallet_v15')) || [];
+        // Version 16 (frischer Start für die Session, um Fehler in alten Daten auszuschließen)
+        // Versuch, alte Daten zu retten:
+        let savedData = localStorage.getItem('wallet_v16') || localStorage.getItem('wallet_v15') || "[]";
+        let coupons = JSON.parse(savedData);
         let html5QrCode = null;
         let selectedStore = "";
         let currentFilterStore = "";
@@ -281,7 +283,8 @@
                 if (!c.dateTo) return true;
                 return c.dateTo >= today;
             });
-            if (coupons.length < initialCount) localStorage.setItem('wallet_v15', JSON.stringify(coupons));
+            // Immer als v16 speichern
+            localStorage.setItem('wallet_v16', JSON.stringify(coupons));
         }
 
         // --- TEMPLATE GENERATOR ---
@@ -299,7 +302,6 @@
             if(c.type === 'percent') { badgeClass = "badge-percent"; badgeText = c.val + "%"; }
             if(c.type === 'free') { badgeClass = "badge-free"; badgeText = "GRATIS"; }
 
-            // NEU: Händlername fett oben links eingefügt
             return `
                 <div class="coupon-header">
                     <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
@@ -318,15 +320,28 @@
             `;
         }
 
+        // --- SICHERES RENDERN DER BARCODES ---
         function renderBarcode(c, idSuffix) {
+            const selector = "#bc-" + c.id + "-" + idSuffix;
+            const element = document.querySelector(selector);
+            
+            if (!element) return; // Falls HTML noch nicht da, abbrechen statt Absturz
+
             try { 
-                JsBarcode("#bc-" + c.id + "-" + idSuffix, c.ean, { 
+                // Erzwinge String, damit auch Zahlen wie 1234 gerendert werden
+                JsBarcode(element, String(c.ean), { 
                     format: "EAN13", lineColor: "#000", width: 2, height: 60, displayValue: false, margin: 0 
                 }); 
             } catch(e) { 
-                JsBarcode("#bc-" + c.id + "-" + idSuffix, c.ean, { 
-                    format: "CODE128", lineColor: "#000", width: 2, height: 60, displayValue: false, margin: 0 
-                }); 
+                try {
+                    // Fallback auf CODE128 (frisst fast alles)
+                    JsBarcode(element, String(c.ean), { 
+                        format: "CODE128", lineColor: "#000", width: 2, height: 60, displayValue: false, margin: 0 
+                    });
+                } catch(e2) {
+                    console.log("Barcode Error: ", c.ean);
+                    // Kein Crash, der User sieht halt leeres Feld, aber App läuft weiter
+                }
             }
         }
 
@@ -379,27 +394,30 @@
             else { unitLabel.innerText = "Gratis"; input.placeholder = "1"; }
         }
 
-        // --- EXPORT IMAGES (MULTI & SINGLE) ---
+        // --- EXPORT IMAGES ---
         async function shareAllIndividualImages() {
-            // Sende ALLE (auch benutzte), da der Empfänger sie vllt noch braucht
             const list = coupons.filter(c => c.store === currentFilterStore);
             if(list.length === 0) { alert("Keine Coupons."); return; }
 
             const renderContainer = document.getElementById('render-container');
             const filesArray = [];
 
+            // Schleife durch alle
             for (let i = 0; i < list.length; i++) {
                 const c = list[i];
                 renderContainer.innerHTML = ""; 
 
-                // Erstelle eine Karte im Container, die EXAKT wie in der Liste aussieht
+                // Erstelle Karte für Export
                 const card = document.createElement('div');
-                card.className = 'coupon-card-style'; // Gleiche Klasse wie in der Liste
-                card.style.width = "350px"; // Feste Breite für Export
+                card.className = 'coupon-card-style'; 
+                card.style.width = "350px"; 
                 card.innerHTML = getCouponHTML(c, 'export');
                 renderContainer.appendChild(card);
+                
+                // Barcode rendern
                 renderBarcode(c, 'export');
 
+                // Kurz warten damit SVG gezeichnet ist
                 await new Promise(r => setTimeout(r, 50));
 
                 try {
@@ -479,6 +497,7 @@
             const filtered = coupons.filter(c => c.store === currentFilterStore);
             filtered.sort((a,b) => (a.used === b.used) ? 0 : a.used ? 1 : -1);
 
+            // SCHRITT 1: Erst alle HTML Elemente erzeugen
             filtered.forEach(c => {
                 const wrapper = document.createElement('div');
                 wrapper.className = `coupon-list-wrapper ${c.used ? 'used' : ''}`;
@@ -498,26 +517,35 @@
                     </div>
                 `;
                 list.appendChild(wrapper);
-                renderBarcode(c, 'list');
             });
+
+            // SCHRITT 2: Barcodes rendern (separat, damit HTML schon da ist)
+            // Kleiner Timeout hilft dem Browser
+            setTimeout(() => {
+                filtered.forEach(c => {
+                    renderBarcode(c, 'list');
+                });
+            }, 10);
         }
 
-        // --- DETAILS (FOKUS) ---
+        // --- DETAILS ---
         function openDetail(id) {
             const c = coupons.find(x => x.id === id);
             if(!c) return;
             
             const wrapper = document.getElementById('detail-content-wrapper');
-            wrapper.innerHTML = ""; // leeren
+            wrapper.innerHTML = ""; 
             
-            // Wir erstellen exakt die gleiche Karte wie in der Liste
             const card = document.createElement('div');
             card.className = 'coupon-card-style';
-            // Nur das HTML für den Inhalt, ohne Actions
             card.innerHTML = getCouponHTML(c, 'detail');
             
             wrapper.appendChild(card);
-            renderBarcode(c, 'detail');
+            
+            // Auch hier erst rendern wenn im DOM
+            setTimeout(() => {
+                renderBarcode(c, 'detail');
+            }, 10);
 
             document.getElementById('view-detail').style.display = 'flex';
         }
@@ -526,11 +554,11 @@
         function toggleUsed(id, event) {
             if(event) event.stopPropagation();
             const c = coupons.find(x => x.id === id);
-            if(c) { c.used = !c.used; localStorage.setItem('wallet_v15', JSON.stringify(coupons)); renderList(); }
+            if(c) { c.used = !c.used; localStorage.setItem('wallet_v16', JSON.stringify(coupons)); renderList(); }
         }
         function deleteCoupon(id, event) {
             if(event) event.stopPropagation();
-            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v15', JSON.stringify(coupons)); renderList(); }
+            if(confirm("Löschen?")) { coupons = coupons.filter(c => c.id !== id); localStorage.setItem('wallet_v16', JSON.stringify(coupons)); renderList(); }
         }
         function editCoupon(id, event) {
             if(event) event.stopPropagation();
@@ -585,7 +613,7 @@
             } else {
                 coupons.push({ id: Date.now(), ean, store: finalStore, type: selectedType, val, dateFrom, dateTo, note, used: false });
             }
-            localStorage.setItem('wallet_v15', JSON.stringify(coupons));
+            localStorage.setItem('wallet_v16', JSON.stringify(coupons));
             goToDashboard();
         }
 
